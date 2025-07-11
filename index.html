@@ -1,0 +1,2100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能翻译助手</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    
+    <!-- Enhanced Translation Module -->
+    <script src="enhanced-translation.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        .drag-over {
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
+        }
+        
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 图片覆盖层样式 */
+        #imageOverlay img {
+            max-height: 300px;
+            object-fit: contain;
+        }
+        
+        /* 上传区域悬停效果优化 */
+        #uploadZone:hover .opacity-0 {
+            opacity: 0.8;
+        }
+        
+        /* 图片上传区域过渡效果 */
+        #uploadContent,
+        #imageOverlay {
+            transition: all 0.3s ease;
+        }
+        
+        /* 上传区域有图片时的样式 */
+        #uploadZone.has-image {
+            border-color: #10b981;
+            background-color: #f0fdf4;
+        }
+        
+        /* 移除图片按钮样式 */
+        #removeImage {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #ef4444;
+            background-color: transparent;
+        }
+        
+        #removeImage:hover {
+            background-color: #fef2f2;
+        }
+        
+        /* 导航栏翻译质量选择样式 */
+        input[name="translationQuality"]:checked + label,
+        label:has(input[name="translationQuality"]:checked) {
+            background-color: white;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 导航栏响应式设计 */
+        @media (max-width: 1024px) {
+            .nav-center {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .nav-center input[type="text"] {
+                width: 200px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-center {
+                display: none;
+            }
+            
+            /* 移动端在页面顶部显示翻译质量选择 */
+            .mobile-quality-selector {
+                display: block;
+            }
+        }
+        
+        .mobile-quality-selector {
+            display: none;
+        }
+        
+        .history-item {
+            transition: background-color 0.2s ease;
+        }
+        
+        .history-item:hover {
+            background-color: #f8fafc;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
+        }
+        
+        /* 文本截断样式 */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        /* 历史记录卡片悬停效果 */
+        .history-item {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .history-item:hover {
+            border-left-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+        
+        /* 右侧布局自适应 */
+        @media (max-width: 1024px) {
+            .lg\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 历史记录响应式网格 */
+        @media (max-width: 768px) {
+            .md\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 输出占位符动画 */
+        .output-placeholder {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* 历史记录完整内容样式 */
+        .history-item [class*="full-"] {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 4px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        
+        .history-item [class*="full-"]::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .history-item [class*="full-"]::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 2px;
+        }
+        
+        .history-item [class*="full-"]::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        
+        .history-item [class*="full-"]::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+                <!-- Navigation Bar -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <i class="fas fa-language text-blue-600 text-2xl mr-2"></i>
+                    <span class="text-xl font-bold text-gray-900">智能翻译助手</span>
+                </div>
+                
+                <!-- Center: Translation Quality Selection -->
+                <div class="flex items-center space-x-4 nav-center">
+                    <!-- Translation Quality Toggle -->
+                    <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                        <label class="flex items-center px-3 py-1 rounded-md cursor-pointer hover:bg-white transition-colors">
+                            <input type="radio" name="translationQuality" value="google" checked class="sr-only">
+                            <i class="fas fa-globe text-green-600 mr-2"></i>
+                            <span class="text-sm font-medium text-gray-700">Google翻译</span>
+                        </label>
+                        <label class="flex items-center px-3 py-1 rounded-md cursor-pointer hover:bg-white transition-colors">
+                            <input type="radio" name="translationQuality" value="chatgpt" class="sr-only">
+                            <i class="fas fa-robot text-purple-600 mr-2"></i>
+                            <span class="text-sm font-medium text-gray-700">ChatGPT翻译</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Context Input -->
+                    <input 
+                        type="text" 
+                        id="contextInput" 
+                        placeholder="上下文信息 (可选)"
+                        class="px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent w-48"
+                    >
+                    
+                    <!-- ChatGPT Config Button -->
+                    <button id="configButton" class="px-3 py-2 text-sm text-purple-600 hover:text-purple-800 border border-purple-300 rounded-md hover:bg-purple-50 transition-colors">
+                        <i class="fas fa-robot mr-1"></i>配置
+                    </button>
+                </div>
+                
+                <!-- Right: Language Selection -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <select id="sourceLanguage" class="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="auto">自动检测</option>
+                            <option value="zh">中文</option>
+                            <option value="en">English</option>
+                            <option value="ja">日本語</option>
+                            <option value="ko">한국어</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="es">Español</option>
+                            <option value="it">Italiano</option>
+                            <option value="pt">Português</option>
+                            <option value="ru">Русский</option>
+                            <option value="ar">العربية</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    
+                    <i class="fas fa-exchange-alt text-gray-400 cursor-pointer hover:text-blue-600 transition-colors" id="swapLanguages"></i>
+                    
+                    <div class="relative">
+                        <select id="targetLanguage" class="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="en">English</option>
+                            <option value="zh">中文</option>
+                            <option value="ja">日本語</option>
+                            <option value="ko">한국어</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="es">Español</option>
+                            <option value="it">Italiano</option>
+                            <option value="pt">Português</option>
+                            <option value="ru">Русский</option>
+                            <option value="ar">العربية</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Quality Selector (显示在小屏幕上) -->
+    <div class="mobile-quality-selector bg-white border-b border-gray-200 px-4 py-3">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between space-x-4">
+                <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                    <label class="flex items-center px-3 py-1 rounded-md cursor-pointer hover:bg-white transition-colors">
+                        <input type="radio" name="translationQuality" value="google" checked class="sr-only">
+                        <i class="fas fa-globe text-green-600 mr-2"></i>
+                        <span class="text-sm font-medium text-gray-700">Google</span>
+                    </label>
+                    <label class="flex items-center px-3 py-1 rounded-md cursor-pointer hover:bg-white transition-colors">
+                        <input type="radio" name="translationQuality" value="chatgpt" class="sr-only">
+                        <i class="fas fa-robot text-purple-600 mr-2"></i>
+                        <span class="text-sm font-medium text-gray-700">ChatGPT</span>
+                    </label>
+                </div>
+                
+                <input 
+                    type="text" 
+                    id="contextInputMobile" 
+                    placeholder="上下文"
+                    class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                
+                <button id="configButtonMobile" class="px-3 py-2 text-sm text-purple-600 hover:text-purple-800 border border-purple-300 rounded-md hover:bg-purple-50 transition-colors">
+                    <i class="fas fa-robot"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Input and Output Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Left Side: Input Area -->
+            <div class="space-y-4">
+                <!-- Input Section -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center mb-3">
+                        <i class="fas fa-edit text-blue-600 mr-2"></i>
+                        <h2 class="text-lg font-semibold text-gray-900">文本翻译</h2>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <textarea 
+                            id="inputText" 
+                            placeholder="请输入要翻译的文本..."
+                            class="w-full h-24 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                            maxlength="5000"
+                        ></textarea>
+                        
+                        <div class="flex items-center justify-between">
+                            <span id="charCount" class="text-xs text-gray-500">0/5000 字符</span>
+                            <div class="flex space-x-2">
+                                <button id="clearText" class="px-2 py-1 text-xs text-gray-600 hover:text-gray-900 transition-colors">
+                                    <i class="fas fa-times mr-1"></i>清除
+                                </button>
+                                <button id="pasteText" class="px-2 py-1 text-xs text-blue-600 hover:text-blue-800 transition-colors">
+                                    <i class="fas fa-paste mr-1"></i>粘贴
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Upload Section -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-image text-green-600 mr-2"></i>
+                            <h2 class="text-lg font-semibold text-gray-900">图像翻译</h2>
+                        </div>
+                        <!-- Remove Image Button - 只在有图片时显示 -->
+                        <button id="removeImage" class="text-red-600 hover:text-red-800 transition-colors hidden">
+                            <i class="fas fa-times"></i>
+                            <span class="ml-1 text-sm">移除图片</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Upload Zone with Image Overlay -->
+                    <div id="uploadZone" class="relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden text-center hover:border-blue-400 transition-colors cursor-pointer min-h-[200px] flex items-center justify-center">
+                        <!-- Default Upload Content -->
+                        <div id="uploadContent" class="p-6">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-600 text-sm mb-1">拖拽图片到这里，或点击上传</p>
+                            <p class="text-xs text-gray-500 mb-2">支持 JPG, PNG, GIF 格式，最大 10MB</p>
+                            <p class="text-xs text-blue-600">或按 Ctrl+V 粘贴剪贴板图片</p>
+                        </div>
+                        
+                        <!-- Image Overlay - 上传后显示 -->
+                        <div id="imageOverlay" class="absolute inset-0 bg-white rounded-lg hidden">
+                            <img id="previewImage" class="w-full h-full object-contain rounded-lg" alt="Preview">
+                            <!-- Image Overlay Hint -->
+                            <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                <div class="opacity-0 hover:opacity-100 transition-opacity duration-200 text-white text-center">
+                                    <i class="fas fa-sync-alt text-lg mb-1"></i>
+                                    <p class="text-sm">点击更换图片</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <input type="file" id="imageInput" accept="image/*" class="hidden">
+                    </div>
+                </div>
+
+                <!-- Translation Button -->
+                <div class="text-center">
+                    <button id="translateButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <i class="fas fa-language mr-2"></i>
+                        开始翻译
+                    </button>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="hidden text-center py-6">
+                    <div class="spinner mx-auto mb-4"></div>
+                    <p id="loadingText" class="text-gray-600 mb-2">翻译中...</p>
+                    <div class="progress-bar mx-auto" style="width: 200px;">
+                        <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Translation Results -->
+            <div class="space-y-6">
+                <!-- Output Section -->
+                <div id="outputSection" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-language text-green-600 mr-2"></i>
+                            <h2 class="text-lg font-semibold text-gray-900">翻译结果</h2>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="copyResult" class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 transition-colors">
+                                <i class="fas fa-copy mr-1"></i>复制
+                            </button>
+                            <button id="speakResult" class="px-3 py-1 text-sm text-green-600 hover:text-green-800 transition-colors">
+                                <i class="fas fa-volume-up mr-1"></i>朗读
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- OCR提取文本显示 -->
+                    <div id="ocrSection" class="mb-4 hidden">
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h3 class="text-sm font-medium text-gray-700 mb-2">从图片提取的文本:</h3>
+                            <div id="ocrText" class="text-gray-900 text-sm space-y-2"></div>
+                        </div>
+                    </div>
+                    
+                    <textarea 
+                        id="outputText" 
+                        class="w-full h-48 p-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                        placeholder="翻译结果将显示在这里..."
+                    ></textarea>
+                    
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm text-gray-500">置信度: <span id="confidence" class="font-medium">--</span></span>
+                            <span class="text-sm text-gray-500">用时: <span id="translationTime" class="font-medium">--</span></span>
+                        </div>
+                        <button id="saveToHistory" class="px-3 py-1 text-sm text-purple-600 hover:text-purple-800 transition-colors">
+                            <i class="fas fa-save mr-1"></i>保存到历史
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Placeholder when no translation -->
+                <div id="outputPlaceholder" class="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+                    <i class="fas fa-language text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-600 mb-2">翻译结果将显示在这里</h3>
+                    <p class="text-gray-500">在左侧输入文本或上传图片，然后点击"开始翻译"</p>
+                    <div class="mt-6">
+                        <div class="flex justify-center space-x-6 text-sm text-gray-400">
+                            <span class="flex items-center">
+                                <i class="fas fa-keyboard mr-1"></i>
+                                文本输入
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-image mr-1"></i>
+                                图片上传
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-cog mr-1"></i>
+                                质量选择
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Translation History Section (Bottom) -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <i class="fas fa-history text-purple-600 mr-3"></i>
+                    <h2 class="text-xl font-semibold text-gray-900">翻译历史</h2>
+                    <span id="historyCount" class="ml-3 px-2 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">0</span>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="toggleAllHistoryExpand" class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 transition-colors">
+                        <i class="fas fa-expand-arrows-alt mr-1"></i>全部展开
+                    </button>
+                    <button id="toggleHistoryView" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                        <i class="fas fa-th-large mr-1"></i>网格视图
+                    </button>
+                    <button id="clearHistory" class="px-3 py-1 text-sm text-red-600 hover:text-red-800 transition-colors">
+                        <i class="fas fa-trash mr-1"></i>清除历史
+                    </button>
+                </div>
+            </div>
+            
+            <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto custom-scrollbar">
+                <!-- History items will be inserted here -->
+                <div class="col-span-full text-center py-12 text-gray-500">
+                    <i class="fas fa-history text-4xl mb-4"></i>
+                    <h3 class="text-lg font-medium mb-2">暂无翻译历史</h3>
+                    <p class="text-sm">完成翻译后，历史记录将显示在这里</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2">
+        <!-- Toast notifications will be inserted here -->
+    </div>
+
+    <!-- API配置弹窗 -->
+    <div id="configModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-semibold text-gray-900">
+                                <i class="fas fa-robot mr-2 text-purple-600"></i>
+                                配置ChatGPT翻译服务
+                            </h2>
+                            <button id="closeConfigModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-600">
+                            配置OpenAI API密钥以启用ChatGPT智能翻译。密钥将安全保存在您的浏览器中。
+                        </p>
+                    </div>
+                
+                <div class="p-6">
+                    <!-- OpenAI配置 -->
+                    <div class="border border-purple-200 rounded-lg p-6 bg-purple-50">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-medium text-gray-900">
+                                <i class="fas fa-robot text-purple-600 mr-2"></i>
+                                ChatGPT (OpenAI)
+                            </h3>
+                            <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+                                AI智能翻译
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-700 mb-4">
+                            使用OpenAI的ChatGPT进行智能翻译，支持上下文理解，翻译质量极高。按使用量计费，新用户有免费额度。
+                        </p>
+                        <div class="space-y-3">
+                            <div>
+                                <label for="openaiKey" class="block text-sm font-medium text-gray-700 mb-2">
+                                    OpenAI API密钥
+                                </label>
+                                <input 
+                                    type="password" 
+                                    id="openaiKey" 
+                                    placeholder="sk-..."
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                >
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <a href="https://platform.openai.com/api-keys" target="_blank" 
+                                   class="text-purple-600 hover:text-purple-800 text-sm font-medium">
+                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    获取OpenAI API密钥
+                                </a>
+                                <span class="text-xs text-gray-500">
+                                    新用户有$5免费额度
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 使用说明 -->
+                    <div class="mt-6 bg-blue-50 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-2">
+                            <i class="fas fa-lightbulb text-blue-600 mr-2"></i>
+                            使用说明
+                        </h4>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• 配置后即可使用ChatGPT进行智能翻译</li>
+                            <li>• 支持上下文信息，翻译更准确</li>
+                            <li>• 未配置时自动使用免费的Google翻译</li>
+                            <li>• API密钥仅保存在您的浏览器中，安全可靠</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 状态显示 -->
+                    <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-2">
+                            <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                            服务状态
+                        </h4>
+                        <div id="serviceStatus" class="text-sm text-gray-600">
+                            正在检查配置...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            API密钥仅保存在您的浏览器中，安全可靠
+                        </div>
+                        <div class="flex space-x-3">
+                            <button id="clearAllKeys" class="px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-md hover:bg-red-50 transition-colors">
+                                <i class="fas fa-trash mr-1"></i>
+                                清除配置
+                            </button>
+                            <button id="saveConfig" class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-save mr-1"></i>
+                                保存配置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // DOM Elements
+        const inputText = document.getElementById('inputText');
+        const charCount = document.getElementById('charCount');
+        const uploadZone = document.getElementById('uploadZone');
+        const imageInput = document.getElementById('imageInput');
+        const translateButton = document.getElementById('translateButton');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const loadingText = document.getElementById('loadingText');
+        const progressFill = document.getElementById('progressFill');
+        const outputSection = document.getElementById('outputSection');
+        const outputText = document.getElementById('outputText');
+        const ocrSection = document.getElementById('ocrSection');
+        const ocrText = document.getElementById('ocrText');
+        const sourceLanguage = document.getElementById('sourceLanguage');
+        const targetLanguage = document.getElementById('targetLanguage');
+        const swapLanguages = document.getElementById('swapLanguages');
+        const historyList = document.getElementById('historyList');
+        const toastContainer = document.getElementById('toastContainer');
+
+        // 全局变量
+        let currentUploadedFile = null;
+
+        // 语言代码映射
+        const languageMap = {
+            'auto': 'auto',
+            'zh': 'zh-CN',
+            'en': 'en',
+            'ja': 'ja',
+            'ko': 'ko',
+            'fr': 'fr',
+            'de': 'de',
+            'es': 'es',
+            'it': 'it',
+            'pt': 'pt',
+            'ru': 'ru',
+            'ar': 'ar'
+        };
+
+        // OCR语言映射
+        const ocrLanguageMap = {
+            'zh': 'chi_sim',
+            'en': 'eng',
+            'ja': 'jpn',
+            'ko': 'kor',
+            'fr': 'fra',
+            'de': 'deu',
+            'es': 'spa',
+            'it': 'ita',
+            'pt': 'por',
+            'ru': 'rus',
+            'ar': 'ara'
+        };
+
+        // 进度条更新
+        function updateProgress(percentage, text = '处理中...') {
+            progressFill.style.width = `${percentage}%`;
+            loadingText.textContent = text;
+        }
+
+        // Character count
+        inputText.addEventListener('input', function() {
+            const count = this.value.length;
+            charCount.textContent = `${count}/5000 字符`;
+        });
+
+        // Clear text
+        document.getElementById('clearText').addEventListener('click', function() {
+            inputText.value = '';
+            charCount.textContent = '0/5000 字符';
+        });
+
+        // Paste text
+        document.getElementById('pasteText').addEventListener('click', async function() {
+            try {
+                const text = await navigator.clipboard.readText();
+                inputText.value = text;
+                inputText.dispatchEvent(new Event('input'));
+                showToast('文本已粘贴', 'success');
+            } catch (err) {
+                showToast('粘贴失败，请手动粘贴', 'error');
+            }
+        });
+
+        // Language swap
+        swapLanguages.addEventListener('click', function() {
+            const source = sourceLanguage.value;
+            const target = targetLanguage.value;
+            
+            if (source !== 'auto') {
+                sourceLanguage.value = target;
+                targetLanguage.value = source;
+            }
+        });
+
+        // File upload handling
+        uploadZone.addEventListener('click', () => imageInput.click());
+        
+        uploadZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        });
+        
+        uploadZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+        });
+        
+        uploadZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleImageUpload(files[0]);
+            }
+        });
+
+        imageInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                handleImageUpload(e.target.files[0]);
+            }
+        });
+
+        // Paste from clipboard
+        document.addEventListener('paste', function(e) {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    handleImageUpload(file);
+                    break;
+                }
+            }
+        });
+
+        // Handle image upload
+        function handleImageUpload(file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showToast('请选择图片文件', 'error');
+                return;
+            }
+
+            // Validate file size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('图片大小不能超过10MB', 'error');
+                return;
+            }
+
+            // Store file reference
+            currentUploadedFile = file;
+
+            // Show image overlay
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewImage = document.getElementById('previewImage');
+                const uploadContent = document.getElementById('uploadContent');
+                const imageOverlay = document.getElementById('imageOverlay');
+                const removeImageBtn = document.getElementById('removeImage');
+                
+                // Set image source
+                previewImage.src = e.target.result;
+                
+                // Hide upload content and show image overlay
+                uploadContent.classList.add('hidden');
+                imageOverlay.classList.remove('hidden');
+                removeImageBtn.classList.remove('hidden');
+                
+                // Update upload zone style
+                const uploadZone = document.getElementById('uploadZone');
+                uploadZone.classList.remove('border-dashed');
+                uploadZone.classList.add('border-solid', 'border-green-300');
+                
+                showToast('图片已上传', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove image
+        document.getElementById('removeImage').addEventListener('click', function(e) {
+            e.stopPropagation(); // 防止触发上传区域的点击事件
+            
+            const uploadContent = document.getElementById('uploadContent');
+            const imageOverlay = document.getElementById('imageOverlay');
+            const removeImageBtn = document.getElementById('removeImage');
+            const uploadZone = document.getElementById('uploadZone');
+            const imageInput = document.getElementById('imageInput');
+            const ocrSection = document.getElementById('ocrSection');
+            
+            // Reset to upload state
+            uploadContent.classList.remove('hidden');
+            imageOverlay.classList.add('hidden');
+            removeImageBtn.classList.add('hidden');
+            
+            // Reset upload zone style
+            uploadZone.classList.add('border-dashed');
+            uploadZone.classList.remove('border-solid', 'border-green-300');
+            
+            // Clear file data
+            imageInput.value = '';
+            currentUploadedFile = null;
+            ocrSection.classList.add('hidden');
+            
+            showToast('图片已移除', 'info');
+        });
+
+        // Translation button
+        translateButton.addEventListener('click', function() {
+            const text = inputText.value.trim();
+            const imageOverlay = document.getElementById('imageOverlay');
+            const hasImage = !imageOverlay.classList.contains('hidden');
+            
+            if (!text && !hasImage) {
+                showToast('请输入文本或上传图片', 'error');
+                return;
+            }
+
+            performTranslation(text, hasImage);
+        });
+
+        // OCR功能
+        async function performOCR(imageFile) {
+            try {
+                updateProgress(10, 'OCR 引擎加载中...');
+                
+                const worker = await Tesseract.createWorker();
+                
+                updateProgress(30, '语言模型加载中...');
+                
+                // 根据目标语言确定OCR语言
+                const ocrLang = getOCRLanguage();
+                await worker.loadLanguage(ocrLang);
+                await worker.initialize(ocrLang);
+                
+                updateProgress(60, '正在识别图片文字...');
+                
+                // 执行OCR
+                const { data: { text, confidence } } = await worker.recognize(imageFile);
+                
+                updateProgress(80, '文字识别完成');
+                
+                await worker.terminate();
+                
+                return { text: text.trim(), confidence: Math.round(confidence) };
+            } catch (error) {
+                console.error('OCR错误:', error);
+                throw new Error('OCR识别失败: ' + error.message);
+            }
+        }
+
+        // 获取OCR语言
+        function getOCRLanguage() {
+            const sourceLang = sourceLanguage.value;
+            const targetLang = targetLanguage.value;
+            
+            // 如果是自动检测，优先使用中英文
+            if (sourceLang === 'auto') {
+                return 'eng+chi_sim';
+            }
+            
+            // 使用源语言对应的OCR语言
+            const ocrLang = ocrLanguageMap[sourceLang] || 'eng';
+            
+            // 如果是中文，加上英文以提高准确性
+            if (ocrLang === 'chi_sim') {
+                return 'chi_sim+eng';
+            }
+            
+            return ocrLang;
+        }
+
+        // 文本预处理
+        function preprocessText(text) {
+            // 清理文本，移除多余的空白字符
+            return text.replace(/\s+/g, ' ').trim();
+        }
+
+        // OCR文本段落分析和重排
+        function analyzeAndFormatOCRText(rawText) {
+            if (!rawText || !rawText.trim()) return '';
+            
+            // 分行处理
+            const lines = rawText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            
+            if (lines.length === 0) return '';
+            
+            // 段落识别规则
+            const paragraphs = [];
+            let currentParagraph = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const nextLine = lines[i + 1];
+                
+                // 添加当前行到段落
+                currentParagraph.push(line);
+                
+                // 判断是否为段落结束
+                if (shouldEndParagraph(line, nextLine, i, lines)) {
+                    // 结束当前段落
+                    paragraphs.push(currentParagraph.join(' '));
+                    currentParagraph = [];
+                }
+            }
+            
+            // 处理最后一个段落
+            if (currentParagraph.length > 0) {
+                paragraphs.push(currentParagraph.join(' '));
+            }
+            
+            return paragraphs;
+        }
+
+        // 判断是否应该结束段落
+        function shouldEndParagraph(currentLine, nextLine, index, allLines) {
+            // 最后一行
+            if (index === allLines.length - 1) {
+                return true;
+            }
+            
+            // 没有下一行
+            if (!nextLine) {
+                return true;
+            }
+            
+            // 当前行以句号、问号、感叹号结束
+            if (/[.。!！?？]$/.test(currentLine)) {
+                return true;
+            }
+            
+            // 下一行是明显的新段落开始（首字母大写、数字开头等）
+            if (/^[A-Z0-9]/.test(nextLine) && currentLine.length > 20) {
+                return true;
+            }
+            
+            // 中文段落：下一行开头有明显的段落标识
+            if (/^[一二三四五六七八九十\d]+[、\.，]/.test(nextLine)) {
+                return true;
+            }
+            
+            // 检查行长度差异（可能是标题和正文的区别）
+            if (currentLine.length < 30 && nextLine.length > 50) {
+                return true;
+            }
+            
+            // 检查是否为标题行（短行后跟长行）
+            if (currentLine.length < 50 && nextLine.length > 80) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        // 显示格式化的OCR文本
+        function displayFormattedOCRText(paragraphs) {
+            const ocrTextElement = document.getElementById('ocrText');
+            
+            if (!paragraphs || paragraphs.length === 0) {
+                ocrTextElement.innerHTML = '<p class="text-gray-500 italic">未识别到文本</p>';
+                return;
+            }
+            
+            // 生成HTML
+            let html = '';
+            paragraphs.forEach((paragraph, index) => {
+                html += `<p class="text-justify leading-relaxed mb-2 last:mb-0">${escapeHtml(paragraph)}</p>`;
+            });
+            
+            ocrTextElement.innerHTML = html;
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 文本分段处理（长文本）
+        function splitTextIntoChunks(text, maxLength = 1000) {
+            if (text.length <= maxLength) {
+                return [text];
+            }
+            
+            const chunks = [];
+            const sentences = text.split(/[.!?。！？]\s+/);
+            let currentChunk = '';
+            
+            for (const sentence of sentences) {
+                if (currentChunk.length + sentence.length + 1 <= maxLength) {
+                    currentChunk += (currentChunk ? ' ' : '') + sentence;
+                } else {
+                    if (currentChunk) {
+                        chunks.push(currentChunk);
+                    }
+                    currentChunk = sentence;
+                }
+            }
+            
+            if (currentChunk) {
+                chunks.push(currentChunk);
+            }
+            
+            return chunks;
+        }
+
+        // Google Translate API翻译
+        async function translateWithGoogle(text, sourceLang, targetLang) {
+            try {
+                // 清理语言代码
+                const cleanSourceLang = sourceLang === 'auto' ? 'auto' : sourceLang;
+                const cleanTargetLang = targetLang;
+                
+                const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${cleanSourceLang}&tl=${cleanTargetLang}&dt=t&q=${encodeURIComponent(text)}`;
+                
+                const response = await fetch(apiUrl);
+                const result = await response.json();
+                
+                if (result && result[0] && result[0].length > 0) {
+                    // 合并所有翻译片段
+                    let translatedText = '';
+                    for (const segment of result[0]) {
+                        if (segment && segment[0]) {
+                            translatedText += segment[0];
+                        }
+                    }
+                    
+                    return {
+                        translatedText: translatedText.trim(),
+                        confidence: 85,
+                        source: 'Google Translate'
+                    };
+                }
+                
+                throw new Error('Google Translate API响应格式错误');
+            } catch (error) {
+                console.error('Google Translate错误:', error);
+                throw error;
+            }
+        }
+
+        // MyMemory API翻译
+        async function translateWithMyMemory(text, sourceLang, targetLang) {
+            try {
+                const sourceLangCode = languageMap[sourceLang] || sourceLang;
+                const targetLangCode = languageMap[targetLang] || targetLang;
+                
+                const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLangCode}|${targetLangCode}`;
+                
+                const response = await fetch(apiUrl);
+                const result = await response.json();
+                
+                if (result.responseStatus === 200 && result.responseData) {
+                    return {
+                        translatedText: result.responseData.translatedText,
+                        confidence: Math.round(result.responseData.match * 100),
+                        source: 'MyMemory'
+                    };
+                } else {
+                    throw new Error('MyMemory API响应错误');
+                }
+            } catch (error) {
+                console.error('MyMemory翻译错误:', error);
+                throw error;
+            }
+        }
+
+        // LibreTranslate API翻译（备用）
+        async function translateWithLibre(text, sourceLang, targetLang) {
+            try {
+                const apiUrl = 'https://libretranslate.de/translate';
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        q: text,
+                        source: sourceLang === 'auto' ? 'auto' : sourceLang,
+                        target: targetLang,
+                        format: 'text'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.translatedText) {
+                    return {
+                        translatedText: result.translatedText,
+                        confidence: 80,
+                        source: 'LibreTranslate'
+                    };
+                }
+                
+                throw new Error('LibreTranslate API响应错误');
+            } catch (error) {
+                console.error('LibreTranslate错误:', error);
+                throw error;
+            }
+        }
+
+        // 翻译功能（改进版）
+        async function performTextTranslation(text, sourceLang, targetLang) {
+            try {
+                updateProgress(90, '正在翻译...');
+                
+                // 预处理文本
+                const cleanText = preprocessText(text);
+                
+                if (!cleanText) {
+                    throw new Error('文本为空');
+                }
+                
+                // 检查文本长度，如果太长则分段处理
+                const chunks = splitTextIntoChunks(cleanText, 1000);
+                
+                if (chunks.length === 1) {
+                    // 单段翻译
+                    return await translateSingleText(cleanText, sourceLang, targetLang);
+                } else {
+                    // 多段翻译
+                    updateProgress(90, `正在翻译 (${chunks.length} 段)...`);
+                    return await translateMultipleChunks(chunks, sourceLang, targetLang);
+                }
+                
+            } catch (error) {
+                console.error('翻译错误:', error);
+                throw error;
+            }
+        }
+
+        // 单段文本翻译
+        async function translateSingleText(text, sourceLang, targetLang) {
+            const translationServices = [
+                () => translateWithGoogle(text, sourceLang, targetLang),
+                () => translateWithMyMemory(text, sourceLang, targetLang),
+                () => translateWithLibre(text, sourceLang, targetLang)
+            ];
+            
+            let lastError;
+            
+            for (const translateFn of translationServices) {
+                try {
+                    const result = await translateFn();
+                    if (result.translatedText && result.translatedText.trim()) {
+                        return result;
+                    }
+                } catch (error) {
+                    lastError = error;
+                    console.warn(`翻译服务失败，尝试下一个...`, error);
+                }
+            }
+            
+            throw lastError || new Error('所有翻译服务都失败了');
+        }
+
+        // 多段文本翻译
+        async function translateMultipleChunks(chunks, sourceLang, targetLang) {
+            const translatedChunks = [];
+            let totalConfidence = 0;
+            let successCount = 0;
+            
+            for (let i = 0; i < chunks.length; i++) {
+                try {
+                    updateProgress(90 + (i / chunks.length) * 10, `正在翻译第 ${i + 1} 段...`);
+                    
+                    const result = await translateSingleText(chunks[i], sourceLang, targetLang);
+                    translatedChunks.push(result.translatedText);
+                    totalConfidence += result.confidence;
+                    successCount++;
+                    
+                } catch (error) {
+                    console.error(`第 ${i + 1} 段翻译失败:`, error);
+                    // 即使单段失败，也继续翻译其他段
+                    translatedChunks.push(chunks[i]); // 保留原文
+                }
+            }
+            
+            if (successCount === 0) {
+                throw new Error('所有段落翻译都失败了');
+            }
+            
+            return {
+                translatedText: translatedChunks.join(' '),
+                confidence: Math.round(totalConfidence / successCount),
+                source: 'Multiple Services'
+            };
+        }
+
+        // 网络重试机制
+        async function retryWithDelay(fn, maxRetries = 3, delay = 1000) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    return await fn();
+                } catch (error) {
+                    if (i === maxRetries - 1) {
+                        throw error;
+                    }
+                    console.warn(`尝试 ${i + 1} 失败，${delay}ms 后重试...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // 指数退避
+                }
+            }
+        }
+
+        // 翻译质量检查
+        function validateTranslation(original, translated) {
+            if (!translated || translated.trim() === '') {
+                return { isValid: false, reason: '翻译结果为空' };
+            }
+            
+            // 检查是否只是原文的重复
+            if (original.trim() === translated.trim()) {
+                return { isValid: false, reason: '翻译结果与原文相同' };
+            }
+            
+            // 检查是否包含明显的错误标识
+            const errorPatterns = [
+                /error/i,
+                /failed/i,
+                /无法翻译/i,
+                /translation failed/i,
+                /service unavailable/i
+            ];
+            
+            for (const pattern of errorPatterns) {
+                if (pattern.test(translated)) {
+                    return { isValid: false, reason: '翻译结果包含错误信息' };
+                }
+            }
+            
+            return { isValid: true };
+        }
+
+        // 获取选择的翻译质量模式
+        function getSelectedQualityMode() {
+            const qualityRadios = document.querySelectorAll('input[name="translationQuality"]');
+            for (const radio of qualityRadios) {
+                if (radio.checked) {
+                    return radio.value;
+                }
+            }
+            return 'basic';
+        }
+
+        // 获取上下文信息
+        function getContextInfo() {
+            const contextInput = document.getElementById('contextInput');
+            const contextInputMobile = document.getElementById('contextInputMobile');
+            
+            // 优先使用移动端输入框（如果可见）
+            if (contextInputMobile && !contextInputMobile.closest('.mobile-quality-selector').classList.contains('hidden')) {
+                return contextInputMobile.value.trim();
+            }
+            
+            return contextInput ? contextInput.value.trim() : '';
+        }
+        
+        // 同步移动端和桌面端的输入框
+        function syncContextInputs() {
+            const contextInput = document.getElementById('contextInput');
+            const contextInputMobile = document.getElementById('contextInputMobile');
+            
+            if (contextInput && contextInputMobile) {
+                contextInput.addEventListener('input', function() {
+                    contextInputMobile.value = this.value;
+                });
+                
+                contextInputMobile.addEventListener('input', function() {
+                    contextInput.value = this.value;
+                });
+            }
+        }
+        
+        // 同步移动端和桌面端的配置按钮
+        function syncConfigButtons() {
+            const configButton = document.getElementById('configButton');
+            const configButtonMobile = document.getElementById('configButtonMobile');
+            
+            if (configButton && configButtonMobile) {
+                configButtonMobile.addEventListener('click', function() {
+                    configButton.click();
+                });
+            }
+        }
+
+        // 增强版翻译执行器
+        async function performEnhancedTranslation(text, sourceLang, targetLang, qualityMode, context) {
+            try {
+                // 检查是否有增强翻译模块
+                if (typeof window.enhancedTranslator === 'undefined') {
+                    console.warn('增强翻译模块未加载，使用基础翻译');
+                    return await performTextTranslation(text, sourceLang, targetLang);
+                }
+
+                const enhancedTranslator = window.enhancedTranslator;
+                
+                // 检查是否有可用的ChatGPT翻译服务
+                const availableServices = enhancedTranslator.getAvailableServices();
+                
+                if (qualityMode === 'chatgpt' && !availableServices.some(s => s.name === 'OpenAI')) {
+                    // 如果没有配置ChatGPT服务，提供友好的提示
+                    showToast('未配置ChatGPT翻译服务，正在使用Google翻译', 'info');
+                    setTimeout(() => {
+                        showToast('💡 配置OpenAI API密钥可使用ChatGPT翻译', 'info');
+                    }, 1500);
+                    return await performTextTranslation(text, sourceLang, targetLang);
+                }
+                
+                switch (qualityMode) {
+                    case 'chatgpt':
+                        updateProgress(85, '使用ChatGPT AI翻译...');
+                        showToast('正在使用ChatGPT进行智能翻译', 'info');
+                        // 使用增强翻译管理器的快速翻译方法
+                        return await enhancedTranslator.translateFast(text, sourceLang, targetLang);
+                        
+                    case 'google':
+                    default:
+                        updateProgress(85, '使用Google翻译服务...');
+                        return await performTextTranslation(text, sourceLang, targetLang);
+                }
+            } catch (error) {
+                console.warn('增强翻译失败，回退到基础翻译:', error);
+                
+                // 根据错误类型提供不同的提示
+                if (error.message.includes('API密钥')) {
+                    showToast('需要配置OpenAI API密钥使用ChatGPT翻译，已切换到Google翻译', 'warning');
+                    setTimeout(() => {
+                        showToast('💡 点击"配置API密钥"按钮可配置ChatGPT翻译', 'info');
+                    }, 2000);
+                } else {
+                    showToast('ChatGPT翻译服务暂时不可用，使用Google翻译', 'warning');
+                }
+                
+                return await performTextTranslation(text, sourceLang, targetLang);
+            }
+        }
+
+        // 执行翻译
+        async function performTranslation(text, hasImage) {
+            // 显示加载状态
+            loadingSpinner.classList.remove('hidden');
+            outputSection.classList.add('hidden');
+            ocrSection.classList.add('hidden');
+            
+            // 隐藏右侧占位符
+            const outputPlaceholder = document.getElementById('outputPlaceholder');
+            if (outputPlaceholder) {
+                outputPlaceholder.classList.add('hidden');
+            }
+            
+            translateButton.disabled = true;
+            
+            updateProgress(0, '开始处理...');
+            
+            const startTime = Date.now();
+            
+            try {
+                let finalText = text;
+                let ocrResult = null;
+                
+                // 如果有图片，先进行OCR
+                if (hasImage && currentUploadedFile) {
+                    updateProgress(10, '正在识别图片文字...');
+                    ocrResult = await performOCR(currentUploadedFile);
+                    finalText = ocrResult.text;
+                    
+                    if (!finalText) {
+                        throw new Error('无法从图片中提取文本');
+                    }
+                    
+                    // 显示OCR结果（格式化段落）
+                    const formattedParagraphs = analyzeAndFormatOCRText(finalText);
+                    displayFormattedOCRText(formattedParagraphs);
+                    ocrSection.classList.remove('hidden');
+                    
+                    // 将OCR结果填入输入框
+                    inputText.value = finalText;
+                    inputText.dispatchEvent(new Event('input'));
+                    
+                    showToast(`OCR识别完成，识别出 ${finalText.length} 个字符`, 'success');
+                }
+                
+                // 如果没有文本，跳过翻译
+                if (!finalText.trim()) {
+                    throw new Error('没有可翻译的文本');
+                }
+                
+                // 检查文本长度
+                if (finalText.length > 5000) {
+                    showToast('文本过长，可能会分段翻译', 'info');
+                }
+                
+                // 获取翻译设置
+                const qualityMode = getSelectedQualityMode();
+                const context = getContextInfo();
+                
+                // 显示选择的质量模式
+                const qualityNames = {
+                    'google': 'Google翻译',
+                    'chatgpt': 'ChatGPT AI翻译'
+                };
+                updateProgress(60, `准备${qualityNames[qualityMode]}...`);
+                
+                // 进行翻译（使用重试机制和质量选择）
+                const translationResult = await retryWithDelay(() => 
+                    performEnhancedTranslation(
+                        finalText, 
+                        sourceLanguage.value, 
+                        targetLanguage.value,
+                        qualityMode,
+                        context
+                    )
+                );
+                
+                // 验证翻译质量
+                const validation = validateTranslation(finalText, translationResult.translatedText);
+                if (!validation.isValid) {
+                    console.warn('翻译质量检查失败:', validation.reason);
+                    showToast(`翻译质量警告: ${validation.reason}`, 'warning');
+                }
+                
+                updateProgress(100, '翻译完成');
+                
+                // 显示翻译结果
+                outputText.value = translationResult.translatedText;
+                outputSection.classList.remove('hidden');
+                
+                // 确保隐藏占位符
+                const outputPlaceholder = document.getElementById('outputPlaceholder');
+                if (outputPlaceholder) {
+                    outputPlaceholder.classList.add('hidden');
+                }
+                
+                // 更新统计信息
+                const endTime = Date.now();
+                const duration = ((endTime - startTime) / 1000).toFixed(2);
+                document.getElementById('translationTime').textContent = `${duration}s`;
+                
+                // 置信度取OCR和翻译的平均值，如果只有翻译则用翻译置信度
+                const confidence = ocrResult ? 
+                    Math.round((ocrResult.confidence + translationResult.confidence) / 2) : 
+                    translationResult.confidence;
+                
+                document.getElementById('confidence').textContent = `${confidence}%`;
+                
+                // 显示详细的翻译信息
+                let successMessage = `翻译完成`;
+                if (translationResult.source) {
+                    successMessage += ` (${translationResult.source})`;
+                }
+                if (qualityMode === 'premium' && translationResult.alternatives) {
+                    successMessage += ` - 对比了${translationResult.alternatives.length + 1}个翻译引擎`;
+                }
+                
+                showToast(successMessage, 'success');
+                
+                // 自动保存到历史记录
+                addToHistory(finalText, translationResult.translatedText, true, {
+                    confidence: translationResult.confidence || 85,
+                    source: translationResult.source || '未知'
+                });
+                
+                // 如果有备选翻译，显示通知
+                if (translationResult.alternatives && translationResult.alternatives.length > 0) {
+                    setTimeout(() => {
+                        showToast(`发现 ${translationResult.alternatives.length} 个备选翻译版本`, 'info');
+                    }, 1000);
+                }
+                
+            } catch (error) {
+                // 详细的错误处理
+                let errorMessage = error.message;
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = '网络连接失败，请检查网络连接';
+                } else if (error.message.includes('CORS')) {
+                    errorMessage = '网络请求被阻止，请稍后重试';
+                } else if (error.message.includes('timeout')) {
+                    errorMessage = '请求超时，请稍后重试';
+                } else if (error.message.includes('API密钥')) {
+                    errorMessage = error.message + '，已自动切换到基础翻译';
+                }
+                
+                showToast(errorMessage, 'error');
+                console.error('翻译错误:', error);
+                
+                // 提供解决建议
+                if (errorMessage.includes('网络') || errorMessage.includes('连接')) {
+                    setTimeout(() => {
+                        showToast('提示：可以尝试切换网络或使用VPN', 'info');
+                    }, 2000);
+                } else if (errorMessage.includes('API密钥')) {
+                    setTimeout(() => {
+                        showToast('提示：配置API密钥可获得更高质量的翻译', 'info');
+                    }, 2000);
+                }
+                
+            } finally {
+                loadingSpinner.classList.add('hidden');
+                translateButton.disabled = false;
+                updateProgress(0, '');
+                
+                // 如果没有显示翻译结果，则显示占位符
+                const outputSection = document.getElementById('outputSection');
+                const outputPlaceholder = document.getElementById('outputPlaceholder');
+                if (outputSection && outputPlaceholder && outputSection.classList.contains('hidden')) {
+                    outputPlaceholder.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Copy result
+        document.getElementById('copyResult').addEventListener('click', async function() {
+            try {
+                await navigator.clipboard.writeText(outputText.value);
+                showToast('已复制到剪贴板', 'success');
+            } catch (err) {
+                showToast('复制失败', 'error');
+            }
+        });
+
+        // Speak result
+        document.getElementById('speakResult').addEventListener('click', function() {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(outputText.value);
+                utterance.lang = targetLanguage.value;
+                speechSynthesis.speak(utterance);
+            } else {
+                showToast('浏览器不支持语音合成', 'error');
+            }
+        });
+
+        // Save to history
+        document.getElementById('saveToHistory').addEventListener('click', function() {
+            const originalText = inputText.value;
+            const translatedText = outputText.value;
+            
+            if (originalText || translatedText) {
+                addToHistory(originalText, translatedText, false);
+                showToast('已手动保存到历史', 'success');
+            }
+        });
+
+        // Clear history
+        document.getElementById('clearHistory').addEventListener('click', function() {
+            if (confirm('确定要清除所有历史记录吗？')) {
+                localStorage.removeItem('translationHistory');
+                loadHistory();
+                showToast('历史记录已清除', 'success');
+            }
+        });
+
+        // History management
+        function addToHistory(original, translated, autoSave = false, additionalInfo = {}) {
+            const history = JSON.parse(localStorage.getItem('translationHistory') || '[]');
+            const timestamp = new Date().toLocaleString();
+            
+            // 检查是否已存在相同的翻译记录（避免重复保存）
+            const isDuplicate = history.some(item => 
+                item.original === (original || '[图片]') && 
+                item.translated === translated &&
+                item.source === sourceLanguage.value &&
+                item.target === targetLanguage.value
+            );
+            
+            if (isDuplicate && autoSave) {
+                // 如果是自动保存且已存在相同记录，则不保存
+                return;
+            }
+            
+            // 获取当前选择的翻译质量模式
+            const qualityMode = getSelectedQualityMode();
+            const qualityNames = {
+                'google': 'Google翻译',
+                'chatgpt': 'ChatGPT AI翻译'
+            };
+            
+            history.unshift({
+                original: original || '[图片]',
+                translated,
+                timestamp,
+                source: sourceLanguage.value,
+                target: targetLanguage.value,
+                engine: qualityNames[qualityMode] || 'Google翻译',
+                confidence: additionalInfo.confidence || 85,
+                wordCount: {
+                    original: (original || '').length,
+                    translated: translated.length
+                },
+                autoSaved: autoSave
+            });
+            
+            // Keep only last 20 items
+            if (history.length > 20) {
+                history.splice(20);
+            }
+            
+            localStorage.setItem('translationHistory', JSON.stringify(history));
+            loadHistory();
+            
+            // 如果是自动保存，显示简短提示
+            if (autoSave) {
+                setTimeout(() => {
+                    showToast('✅ 已自动保存到历史记录', 'success');
+                }, 500);
+            }
+        }
+
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('translationHistory') || '[]');
+            const historyCountElement = document.getElementById('historyCount');
+            
+            // 重置全部展开/收起状态
+            const toggleAllButton = document.getElementById('toggleAllHistoryExpand');
+            if (toggleAllButton) {
+                toggleAllButton.innerHTML = '<i class="fas fa-expand-arrows-alt mr-1"></i>全部展开';
+                isAllExpanded = false;
+            }
+            
+            // 更新历史计数
+            if (historyCountElement) {
+                historyCountElement.textContent = history.length;
+            }
+            
+            if (history.length === 0) {
+                historyList.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-gray-500">
+                        <i class="fas fa-history text-4xl mb-4"></i>
+                        <h3 class="text-lg font-medium mb-2">暂无翻译历史</h3>
+                        <p class="text-sm">完成翻译后，历史记录将显示在这里</p>
+                        <div class="mt-4 text-xs text-gray-400">
+                            <p>💡 提示：翻译完成后会自动保存到历史记录</p>
+                            <p>🔍 功能：支持展开查看完整内容、一键复制、重新加载翻译</p>
+                            <p>📍 布局：顶部翻译配置，左侧输入区域，右侧结果显示</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            historyList.innerHTML = history.map((item, index) => `
+                <div class="history-item bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                ${item.source || item.target || 'CN'}
+                            </span>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${item.engine && item.engine.includes('ChatGPT') ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}">
+                                ${item.engine || 'Google翻译'}
+                            </span>
+                            ${item.confidence ? `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                ${item.confidence}%
+                            </span>` : ''}
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="toggleHistoryItemExpand(${index}); event.stopPropagation();" 
+                                    class="text-blue-600 hover:text-blue-800 transition-colors text-xs">
+                                <i class="fas fa-expand-alt mr-1"></i>
+                                <span class="expand-text-${index}">展开</span>
+                            </button>
+                            <button onclick="removeHistoryItem(${index}); event.stopPropagation();" 
+                                    class="text-gray-400 hover:text-red-500 transition-colors">
+                                <i class="fas fa-times text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium text-gray-900">
+                            <div class="original-preview-${index}" title="${item.original}">
+                                ${item.original.length > 60 ? item.original.substring(0, 60) + '...' : item.original}
+                            </div>
+                            <div class="original-full-${index} hidden" style="word-break: break-word; white-space: pre-wrap;">
+                                ${item.original}
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-600">
+                            <div class="translated-preview-${index}" title="${item.translated}">
+                                ${item.translated.length > 80 ? item.translated.substring(0, 80) + '...' : item.translated}
+                            </div>
+                            <div class="translated-full-${index} hidden" style="word-break: break-word; white-space: pre-wrap;">
+                                ${item.translated}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between text-xs text-gray-400">
+                        <span class="flex items-center">
+                            <i class="fas fa-clock mr-1"></i>
+                            ${new Date(item.timestamp).toLocaleDateString()}
+                            ${item.autoSaved ? '<span class="ml-2 text-xs text-green-600">🤖 自动保存</span>' : ''}
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-language mr-1"></i>
+                            ${item.source || 'auto'} → ${item.target || 'zh'}
+                        </span>
+                    </div>
+                    <div class="mt-1 flex items-center justify-between text-xs text-gray-400">
+                        <span class="flex items-center">
+                            <i class="fas fa-file-text mr-1"></i>
+                            原文 ${item.original.length} 字符
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-file-alt mr-1"></i>
+                            译文 ${item.translated.length} 字符
+                        </span>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between">
+                        <button onclick="loadHistoryItem('${item.original.replace(/'/g, "\\'")}', '${item.translated.replace(/'/g, "\\'")}'); event.stopPropagation();" 
+                                class="text-blue-600 hover:text-blue-800 transition-colors text-xs">
+                            <i class="fas fa-redo mr-1"></i>
+                            加载此翻译
+                        </button>
+                        <button onclick="copyHistoryItem('${item.translated.replace(/'/g, "\\'")}'); event.stopPropagation();" 
+                                class="text-green-600 hover:text-green-800 transition-colors text-xs">
+                            <i class="fas fa-copy mr-1"></i>
+                            复制结果
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 删除单个历史记录
+        function removeHistoryItem(index) {
+            const history = JSON.parse(localStorage.getItem('translationHistory') || '[]');
+            history.splice(index, 1);
+            localStorage.setItem('translationHistory', JSON.stringify(history));
+            loadHistory();
+            showToast('历史记录已删除', 'success');
+        }
+
+        // 展开/收起历史记录内容
+        function toggleHistoryItemExpand(index) {
+            const originalPreview = document.querySelector(`.original-preview-${index}`);
+            const originalFull = document.querySelector(`.original-full-${index}`);
+            const translatedPreview = document.querySelector(`.translated-preview-${index}`);
+            const translatedFull = document.querySelector(`.translated-full-${index}`);
+            const expandText = document.querySelector(`.expand-text-${index}`);
+            const expandIcon = expandText.parentElement.querySelector('i');
+            
+            if (originalFull.classList.contains('hidden')) {
+                // 展开
+                originalPreview.classList.add('hidden');
+                originalFull.classList.remove('hidden');
+                translatedPreview.classList.add('hidden');
+                translatedFull.classList.remove('hidden');
+                expandText.textContent = '收起';
+                expandIcon.className = 'fas fa-compress-alt mr-1';
+            } else {
+                // 收起
+                originalPreview.classList.remove('hidden');
+                originalFull.classList.add('hidden');
+                translatedPreview.classList.remove('hidden');
+                translatedFull.classList.add('hidden');
+                expandText.textContent = '展开';
+                expandIcon.className = 'fas fa-expand-alt mr-1';
+            }
+        }
+
+        // 复制历史记录翻译结果
+        async function copyHistoryItem(translatedText) {
+            try {
+                await navigator.clipboard.writeText(translatedText);
+                showToast('翻译结果已复制到剪贴板', 'success');
+            } catch (err) {
+                console.error('复制失败:', err);
+                showToast('复制失败，请手动复制', 'error');
+            }
+        }
+
+        function loadHistoryItem(original, translated) {
+            inputText.value = original === '[图片]' ? '' : original;
+            outputText.value = translated;
+            outputSection.classList.remove('hidden');
+            
+            // 隐藏占位符
+            const outputPlaceholder = document.getElementById('outputPlaceholder');
+            if (outputPlaceholder) {
+                outputPlaceholder.classList.add('hidden');
+            }
+            
+            inputText.dispatchEvent(new Event('input'));
+            
+            // 显示加载历史记录的提示
+            showToast('已加载历史翻译记录', 'success');
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast p-4 rounded-lg shadow-lg text-white max-w-sm ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 
+                type === 'warning' ? 'bg-yellow-500' :
+                'bg-blue-500'
+            }`;
+            
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${
+                        type === 'success' ? 'fa-check-circle' : 
+                        type === 'error' ? 'fa-exclamation-circle' : 
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-info-circle'
+                    } mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto remove after different durations based on type
+            const duration = type === 'error' ? 5000 : type === 'warning' ? 4000 : 3000;
+            setTimeout(() => {
+                toast.remove();
+            }, duration);
+        }
+
+        // 全部展开/收起功能
+        let isAllExpanded = false;
+        document.getElementById('toggleAllHistoryExpand')?.addEventListener('click', function() {
+            const history = JSON.parse(localStorage.getItem('translationHistory') || '[]');
+            const toggleButton = this;
+            
+            if (!isAllExpanded) {
+                // 全部展开
+                for (let i = 0; i < history.length; i++) {
+                    const originalPreview = document.querySelector(`.original-preview-${i}`);
+                    const originalFull = document.querySelector(`.original-full-${i}`);
+                    const translatedPreview = document.querySelector(`.translated-preview-${i}`);
+                    const translatedFull = document.querySelector(`.translated-full-${i}`);
+                    const expandText = document.querySelector(`.expand-text-${i}`);
+                    const expandIcon = expandText?.parentElement?.querySelector('i');
+                    
+                    if (originalPreview && originalFull && translatedPreview && translatedFull) {
+                        originalPreview.classList.add('hidden');
+                        originalFull.classList.remove('hidden');
+                        translatedPreview.classList.add('hidden');
+                        translatedFull.classList.remove('hidden');
+                        
+                        if (expandText && expandIcon) {
+                            expandText.textContent = '收起';
+                            expandIcon.className = 'fas fa-compress-alt mr-1';
+                        }
+                    }
+                }
+                
+                toggleButton.innerHTML = '<i class="fas fa-compress-arrows-alt mr-1"></i>全部收起';
+                isAllExpanded = true;
+                showToast('已展开所有历史记录', 'info');
+            } else {
+                // 全部收起
+                for (let i = 0; i < history.length; i++) {
+                    const originalPreview = document.querySelector(`.original-preview-${i}`);
+                    const originalFull = document.querySelector(`.original-full-${i}`);
+                    const translatedPreview = document.querySelector(`.translated-preview-${i}`);
+                    const translatedFull = document.querySelector(`.translated-full-${i}`);
+                    const expandText = document.querySelector(`.expand-text-${i}`);
+                    const expandIcon = expandText?.parentElement?.querySelector('i');
+                    
+                    if (originalPreview && originalFull && translatedPreview && translatedFull) {
+                        originalPreview.classList.remove('hidden');
+                        originalFull.classList.add('hidden');
+                        translatedPreview.classList.remove('hidden');
+                        translatedFull.classList.add('hidden');
+                        
+                        if (expandText && expandIcon) {
+                            expandText.textContent = '展开';
+                            expandIcon.className = 'fas fa-expand-alt mr-1';
+                        }
+                    }
+                }
+                
+                toggleButton.innerHTML = '<i class="fas fa-expand-arrows-alt mr-1"></i>全部展开';
+                isAllExpanded = false;
+                showToast('已收起所有历史记录', 'info');
+            }
+        });
+
+        // 视图切换功能
+        let isGridView = true;
+        document.getElementById('toggleHistoryView')?.addEventListener('click', function() {
+            const historyList = document.getElementById('historyList');
+            const toggleButton = this;
+            
+            if (isGridView) {
+                // 切换到列表视图
+                historyList.className = 'space-y-2 max-h-96 overflow-y-auto custom-scrollbar';
+                toggleButton.innerHTML = '<i class="fas fa-th-large mr-1"></i>网格视图';
+                isGridView = false;
+                loadHistory(); // 重新加载以应用新样式
+            } else {
+                // 切换到网格视图
+                historyList.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto custom-scrollbar';
+                toggleButton.innerHTML = '<i class="fas fa-list mr-1"></i>列表视图';
+                isGridView = true;
+                loadHistory(); // 重新加载以应用新样式
+            }
+        });
+
+        // API配置管理
+        const apiConfigManager = {
+            // 保存API密钥到localStorage
+            saveKeys: function(keys) {
+                localStorage.setItem('translationApiKeys', JSON.stringify(keys));
+                this.updateEnhancedTranslator();
+            },
+            
+            // 从localStorage加载API密钥
+            loadKeys: function() {
+                const saved = localStorage.getItem('translationApiKeys');
+                return saved ? JSON.parse(saved) : {};
+            },
+            
+            // 更新enhanced-translation.js中的API配置
+            updateEnhancedTranslator: function() {
+                if (typeof window.enhancedTranslator !== 'undefined') {
+                    const keys = this.loadKeys();
+                    
+                    // 更新API配置
+                    if (keys.deepl) {
+                        window.enhancedTranslator.deepl.apiKey = keys.deepl;
+                    }
+                    if (keys.openai) {
+                        window.enhancedTranslator.openai.apiKey = keys.openai;
+                    }
+                    if (keys.microsoft) {
+                        window.enhancedTranslator.microsoft.apiKey = keys.microsoft;
+                    }
+                    
+                    console.log('✅ API配置已更新');
+                }
+            },
+            
+            // 获取服务状态
+            getServiceStatus: function() {
+                const keys = this.loadKeys();
+                
+                if (keys.openai) {
+                    return '✅ ChatGPT翻译已配置，可以使用AI智能翻译';
+                } else {
+                    return '⚠️ 未配置ChatGPT翻译，当前仅可使用Google翻译';
+                }
+            },
+            
+            // 清除所有密钥
+            clearAllKeys: function() {
+                localStorage.removeItem('translationApiKeys');
+                this.updateEnhancedTranslator();
+                console.log('🗑️ 所有API密钥已清除');
+            }
+        };
+
+        // 配置弹窗管理
+        const configModal = document.getElementById('configModal');
+        const configButton = document.getElementById('configButton');
+        const closeConfigModal = document.getElementById('closeConfigModal');
+        const saveConfigButton = document.getElementById('saveConfig');
+        const clearAllKeysButton = document.getElementById('clearAllKeys');
+        const serviceStatus = document.getElementById('serviceStatus');
+        
+        // 打开配置弹窗
+        configButton.addEventListener('click', function() {
+            configModal.classList.remove('hidden');
+            loadConfigForm();
+            updateServiceStatus();
+        });
+        
+        // 关闭配置弹窗
+        closeConfigModal.addEventListener('click', function() {
+            configModal.classList.add('hidden');
+        });
+        
+        // 点击背景关闭弹窗
+        configModal.addEventListener('click', function(e) {
+            if (e.target === configModal) {
+                configModal.classList.add('hidden');
+            }
+        });
+        
+        // 加载配置表单
+        function loadConfigForm() {
+            const keys = apiConfigManager.loadKeys();
+            document.getElementById('openaiKey').value = keys.openai || '';
+        }
+        
+        // 更新服务状态显示
+        function updateServiceStatus() {
+            const status = apiConfigManager.getServiceStatus();
+            serviceStatus.textContent = status;
+        }
+        
+        // 保存配置
+        saveConfigButton.addEventListener('click', function() {
+            const openaiKey = document.getElementById('openaiKey').value.trim();
+            
+            if (openaiKey) {
+                const keys = { openai: openaiKey };
+                apiConfigManager.saveKeys(keys);
+                updateServiceStatus();
+                showToast('✅ ChatGPT翻译配置成功！', 'success');
+            } else {
+                // 清除配置
+                apiConfigManager.saveKeys({});
+                updateServiceStatus();
+                showToast('⚠️ 已清除ChatGPT配置', 'warning');
+            }
+            
+            setTimeout(() => {
+                configModal.classList.add('hidden');
+            }, 1500);
+        });
+        
+        // 清除配置
+        clearAllKeysButton.addEventListener('click', function() {
+            if (confirm('确定要清除ChatGPT配置吗？此操作不可撤销。')) {
+                apiConfigManager.clearAllKeys();
+                loadConfigForm();
+                updateServiceStatus();
+                showToast('🗑️ ChatGPT配置已清除', 'info');
+            }
+        });
+
+        // 初始化界面状态
+        function initializeInterface() {
+            // 确保右侧占位符在初始状态下显示
+            const outputSection = document.getElementById('outputSection');
+            const outputPlaceholder = document.getElementById('outputPlaceholder');
+            
+            if (outputSection && outputPlaceholder) {
+                if (outputSection.classList.contains('hidden')) {
+                    outputPlaceholder.classList.remove('hidden');
+                } else {
+                    outputPlaceholder.classList.add('hidden');
+                }
+            }
+            
+            // 加载历史记录
+            loadHistory();
+            
+            // 初始化API配置
+            apiConfigManager.updateEnhancedTranslator();
+            
+            // 同步移动端和桌面端的控件
+            syncContextInputs();
+            syncConfigButtons();
+        }
+
+        // Load history on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeInterface();
+        });
+    </script>
+</body>
+</html> 

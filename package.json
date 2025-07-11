@@ -1,0 +1,55 @@
+{
+  "name": "smart-translator",
+  "version": "1.0.0",
+  "description": "一个功能强大的现代化翻译Web应用，支持文本翻译、OCR图像翻译、拖拽上传、剪贴板粘贴等功能",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -p 8000 -o",
+    "dev": "http-server -p 8000 -o -c-1",
+    "serve": "python -m http.server 8000",
+    "test": "echo \"暂无测试用例\" && exit 0"
+  },
+  "keywords": [
+    "translation",
+    "ocr",
+    "image-translation",
+    "web-app",
+    "multilingual",
+    "ai",
+    "machine-learning",
+    "chinese",
+    "english",
+    "japanese",
+    "korean"
+  ],
+  "author": "您的名字",
+  "license": "MIT",
+  "homepage": "https://github.com/yourusername/smart-translator",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/smart-translator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/smart-translator/issues"
+  },
+  "dependencies": {
+    "tesseract.js": "^4.1.1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "optionalDependencies": {
+    "@google-cloud/vision": "^3.0.0",
+    "@google-cloud/translate": "^7.0.0",
+    "openai": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 Edge versions"
+  ]
+}
