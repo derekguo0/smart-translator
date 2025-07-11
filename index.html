@@ -96,31 +96,73 @@
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
         
-        /* 导航栏响应式设计 */
-        @media (max-width: 1024px) {
-            .nav-center {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-            
-            .nav-center input[type="text"] {
-                width: 200px;
-            }
+        /* 移动端菜单样式 */
+        .mobile-menu-button {
+            display: none;
         }
         
-        @media (max-width: 768px) {
+        .mobile-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+            min-width: 320px;
+            padding: 1rem;
+        }
+        
+        .mobile-menu.show {
+            display: block;
+        }
+        
+        /* 导航栏响应式设计 */
+        @media (max-width: 1024px) {
             .nav-center {
                 display: none;
             }
             
-            /* 移动端在页面顶部显示翻译质量选择 */
-            .mobile-quality-selector {
-                display: block;
+            .mobile-menu-button {
+                display: flex;
+            }
+            
+            .nav-right {
+                flex-direction: column;
+                gap: 0.5rem;
             }
         }
         
-        .mobile-quality-selector {
+        @media (max-width: 768px) {
+            .nav-right {
+                display: none;
+            }
+            
+            .mobile-menu {
+                left: 0;
+                right: 0;
+                min-width: auto;
+                margin: 0 1rem;
+            }
+        }
+        
+        /* 移动端语言选择器 */
+        .mobile-language-selector {
             display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-language-selector {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 1rem;
+                background: #f8fafc;
+                border-top: 1px solid #e5e7eb;
+                margin: 0 -1rem -1rem -1rem;
+            }
         }
         
         .history-item {
@@ -260,79 +302,136 @@
                     </button>
                 </div>
                 
-                <!-- Right: Language Selection -->
+                <!-- Right: Language Selection + Mobile Menu -->
                 <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <select id="sourceLanguage" class="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="auto">自动检测</option>
-                            <option value="zh">中文</option>
-                            <option value="en">English</option>
-                            <option value="ja">日本語</option>
-                            <option value="ko">한국어</option>
-                            <option value="fr">Français</option>
-                            <option value="de">Deutsch</option>
-                            <option value="es">Español</option>
-                            <option value="it">Italiano</option>
-                            <option value="pt">Português</option>
-                            <option value="ru">Русский</option>
-                            <option value="ar">العربية</option>
-                        </select>
-                        <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <!-- Mobile Menu Button -->
+                    <div class="relative mobile-menu-button">
+                        <button id="mobileMenuButton" class="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-bars"></i>
+                            <span class="ml-2 hidden sm:inline">菜单</span>
+                        </button>
+                        
+                        <!-- Mobile Dropdown Menu -->
+                        <div id="mobileMenu" class="mobile-menu">
+                            <!-- Translation Quality Selection -->
+                            <div class="mb-4">
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">翻译服务</h3>
+                                <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                                    <label class="flex items-center px-3 py-2 rounded-md cursor-pointer hover:bg-white transition-colors flex-1">
+                                        <input type="radio" name="translationQuality" value="google" checked class="sr-only">
+                                        <i class="fas fa-globe text-green-600 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700">Google翻译</span>
+                                    </label>
+                                    <label class="flex items-center px-3 py-2 rounded-md cursor-pointer hover:bg-white transition-colors flex-1">
+                                        <input type="radio" name="translationQuality" value="chatgpt" class="sr-only">
+                                        <i class="fas fa-robot text-purple-600 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700">ChatGPT</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Context Input -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">上下文信息</label>
+                                <input 
+                                    type="text" 
+                                    id="contextInputMobile" 
+                                    placeholder="可选：提供翻译上下文"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                            </div>
+                            
+                            <!-- Config Button -->
+                            <div class="mb-4">
+                                <button id="configButtonMobile" class="w-full flex items-center justify-center px-3 py-2 text-sm text-purple-600 hover:text-purple-800 border border-purple-300 rounded-md hover:bg-purple-50 transition-colors">
+                                    <i class="fas fa-robot mr-2"></i>
+                                    配置ChatGPT翻译
+                                </button>
+                            </div>
+                            
+                            <!-- Mobile Language Selector -->
+                            <div class="mobile-language-selector">
+                                <div class="flex items-center space-x-2">
+                                    <select id="sourceLanguageMobile" class="appearance-none bg-white border border-gray-300 rounded-md px-2 py-1 pr-6 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="auto">自动检测</option>
+                                        <option value="zh">中文</option>
+                                        <option value="en">English</option>
+                                        <option value="ja">日本語</option>
+                                        <option value="ko">한국어</option>
+                                        <option value="fr">Français</option>
+                                        <option value="de">Deutsch</option>
+                                        <option value="es">Español</option>
+                                        <option value="it">Italiano</option>
+                                        <option value="pt">Português</option>
+                                        <option value="ru">Русский</option>
+                                        <option value="ar">العربية</option>
+                                    </select>
+                                    
+                                    <i class="fas fa-exchange-alt text-gray-400 cursor-pointer hover:text-blue-600 transition-colors" id="swapLanguagesMobile"></i>
+                                    
+                                    <select id="targetLanguageMobile" class="appearance-none bg-white border border-gray-300 rounded-md px-2 py-1 pr-6 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="en">English</option>
+                                        <option value="zh">中文</option>
+                                        <option value="ja">日本語</option>
+                                        <option value="ko">한국어</option>
+                                        <option value="fr">Français</option>
+                                        <option value="de">Deutsch</option>
+                                        <option value="es">Español</option>
+                                        <option value="it">Italiano</option>
+                                        <option value="pt">Português</option>
+                                        <option value="ru">Русский</option>
+                                        <option value="ar">العربية</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <i class="fas fa-exchange-alt text-gray-400 cursor-pointer hover:text-blue-600 transition-colors" id="swapLanguages"></i>
-                    
-                    <div class="relative">
-                        <select id="targetLanguage" class="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="en">English</option>
-                            <option value="zh">中文</option>
-                            <option value="ja">日本語</option>
-                            <option value="ko">한국어</option>
-                            <option value="fr">Français</option>
-                            <option value="de">Deutsch</option>
-                            <option value="es">Español</option>
-                            <option value="it">Italiano</option>
-                            <option value="pt">Português</option>
-                            <option value="ru">Русский</option>
-                            <option value="ar">العربية</option>
-                        </select>
-                        <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <!-- Desktop Language Selection -->
+                    <div class="nav-right flex items-center space-x-4">
+                        <div class="relative">
+                            <select id="sourceLanguage" class="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="auto">自动检测</option>
+                                <option value="zh">中文</option>
+                                <option value="en">English</option>
+                                <option value="ja">日本語</option>
+                                <option value="ko">한국어</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="es">Español</option>
+                                <option value="it">Italiano</option>
+                                <option value="pt">Português</option>
+                                <option value="ru">Русский</option>
+                                <option value="ar">العربية</option>
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        
+                        <i class="fas fa-exchange-alt text-gray-400 cursor-pointer hover:text-blue-600 transition-colors" id="swapLanguages"></i>
+                        
+                        <div class="relative">
+                            <select id="targetLanguage" class="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="en">English</option>
+                                <option value="zh">中文</option>
+                                <option value="ja">日本語</option>
+                                <option value="ko">한국어</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="es">Español</option>
+                                <option value="it">Italiano</option>
+                                <option value="pt">Português</option>
+                                <option value="ru">Русский</option>
+                                <option value="ar">العربية</option>
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Mobile Quality Selector (显示在小屏幕上) -->
-    <div class="mobile-quality-selector bg-white border-b border-gray-200 px-4 py-3">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex items-center justify-between space-x-4">
-                <div class="flex items-center bg-gray-100 rounded-lg p-1">
-                    <label class="flex items-center px-3 py-1 rounded-md cursor-pointer hover:bg-white transition-colors">
-                        <input type="radio" name="translationQuality" value="google" checked class="sr-only">
-                        <i class="fas fa-globe text-green-600 mr-2"></i>
-                        <span class="text-sm font-medium text-gray-700">Google</span>
-                    </label>
-                    <label class="flex items-center px-3 py-1 rounded-md cursor-pointer hover:bg-white transition-colors">
-                        <input type="radio" name="translationQuality" value="chatgpt" class="sr-only">
-                        <i class="fas fa-robot text-purple-600 mr-2"></i>
-                        <span class="text-sm font-medium text-gray-700">ChatGPT</span>
-                    </label>
-                </div>
-                
-                <input 
-                    type="text" 
-                    id="contextInputMobile" 
-                    placeholder="上下文"
-                    class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                
-                <button id="configButtonMobile" class="px-3 py-2 text-sm text-purple-600 hover:text-purple-800 border border-purple-300 rounded-md hover:bg-purple-50 transition-colors">
-                    <i class="fas fa-robot"></i>
-                </button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1365,8 +1464,102 @@
             if (configButton && configButtonMobile) {
                 configButtonMobile.addEventListener('click', function() {
                     configButton.click();
+                    // 关闭移动端菜单
+                    const mobileMenu = document.getElementById('mobileMenu');
+                    if (mobileMenu) {
+                        mobileMenu.classList.remove('show');
+                    }
                 });
             }
+        }
+
+        // 同步移动端和桌面端的语言选择器
+        function syncLanguageSelectors() {
+            const sourceLanguage = document.getElementById('sourceLanguage');
+            const targetLanguage = document.getElementById('targetLanguage');
+            const sourceLanguageMobile = document.getElementById('sourceLanguageMobile');
+            const targetLanguageMobile = document.getElementById('targetLanguageMobile');
+            const swapLanguages = document.getElementById('swapLanguages');
+            const swapLanguagesMobile = document.getElementById('swapLanguagesMobile');
+            
+            // 同步源语言选择
+            if (sourceLanguage && sourceLanguageMobile) {
+                sourceLanguage.addEventListener('change', function() {
+                    sourceLanguageMobile.value = this.value;
+                });
+                
+                sourceLanguageMobile.addEventListener('change', function() {
+                    sourceLanguage.value = this.value;
+                });
+            }
+            
+            // 同步目标语言选择
+            if (targetLanguage && targetLanguageMobile) {
+                targetLanguage.addEventListener('change', function() {
+                    targetLanguageMobile.value = this.value;
+                });
+                
+                targetLanguageMobile.addEventListener('change', function() {
+                    targetLanguage.value = this.value;
+                });
+            }
+            
+            // 同步语言交换功能
+            if (swapLanguages && swapLanguagesMobile) {
+                swapLanguagesMobile.addEventListener('click', function() {
+                    const source = sourceLanguage.value;
+                    const target = targetLanguage.value;
+                    
+                    if (source !== 'auto') {
+                        sourceLanguage.value = target;
+                        targetLanguage.value = source;
+                        sourceLanguageMobile.value = target;
+                        targetLanguageMobile.value = source;
+                    }
+                });
+            }
+        }
+
+        // 设置移动端菜单
+        function setupMobileMenu() {
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                // 点击菜单按钮切换显示
+                mobileMenuButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    mobileMenu.classList.toggle('show');
+                });
+                
+                // 点击菜单外部关闭菜单
+                document.addEventListener('click', function(e) {
+                    if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
+                        mobileMenu.classList.remove('show');
+                    }
+                });
+                
+                // 阻止菜单内部点击事件冒泡
+                mobileMenu.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+            
+            // 移动端翻译质量选择同步
+            const qualityRadios = document.querySelectorAll('input[name="translationQuality"]');
+            qualityRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // 同步所有同名的radio按钮
+                    const allRadios = document.querySelectorAll('input[name="translationQuality"]');
+                    allRadios.forEach(r => {
+                        if (r.value === this.value) {
+                            r.checked = true;
+                        } else {
+                            r.checked = false;
+                        }
+                    });
+                });
+            });
         }
 
         // 增强版翻译执行器
@@ -2144,6 +2337,8 @@
             // 同步移动端和桌面端的控件
             syncContextInputs();
             syncConfigButtons();
+            syncLanguageSelectors();
+            setupMobileMenu();
         }
 
         // Load history on page load
