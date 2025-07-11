@@ -111,8 +111,7 @@
             border-radius: 0.5rem;
             box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             z-index: 1000;
-            min-width: 320px;
-            max-width: 400px;
+            width: 360px;
             padding: 1rem;
         }
         
@@ -136,24 +135,32 @@
                 display: none;
             }
             
+            /* 当屏幕太小时，确保菜单不会超出屏幕 */
             .mobile-menu {
-                left: 0;
-                right: 0;
-                min-width: auto;
-                max-width: none;
-                margin: 0 0.5rem;
+                right: 0.5rem;
+                left: auto;
             }
         }
         
         /* 超小屏幕优化 */
         @media (max-width: 480px) {
             .mobile-menu {
-                margin: 0 0.25rem;
+                right: 0.25rem;
+                left: auto;
             }
             
             /* 超小屏幕下翻译服务选择改为垂直布局 */
             .mobile-menu .grid.sm\\:grid-cols-2 {
                 grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 当屏幕宽度小于菜单宽度时的处理 */
+        @media (max-width: 400px) {
+            .mobile-menu {
+                right: 0.5rem;
+                left: 0.5rem;
+                width: auto;
             }
         }
         
