@@ -98,7 +98,14 @@
         
         /* 移动端菜单样式 */
         .mobile-menu-button {
-            display: none;
+            display: none !important;
+        }
+        
+        /* 强制显示移动端菜单用于调试 */
+        .mobile-menu-button {
+            display: flex !important;
+            background: #fef2f2;
+            border: 2px solid #ef4444;
         }
         
         .mobile-menu {
@@ -1522,14 +1529,23 @@
 
         // 设置移动端菜单
         function setupMobileMenu() {
+            console.log('🔧 初始化移动端菜单...');
+            
             const mobileMenuButton = document.getElementById('mobileMenuButton');
             const mobileMenu = document.getElementById('mobileMenu');
             
+            console.log('移动端菜单按钮:', mobileMenuButton);
+            console.log('移动端菜单:', mobileMenu);
+            
             if (mobileMenuButton && mobileMenu) {
+                console.log('✅ 移动端菜单元素找到，绑定事件...');
+                
                 // 点击菜单按钮切换显示
                 mobileMenuButton.addEventListener('click', function(e) {
+                    console.log('📱 移动端菜单按钮被点击');
                     e.stopPropagation();
                     mobileMenu.classList.toggle('show');
+                    console.log('菜单状态:', mobileMenu.classList.contains('show') ? '打开' : '关闭');
                 });
                 
                 // 点击菜单外部关闭菜单
@@ -1543,6 +1559,10 @@
                 mobileMenu.addEventListener('click', function(e) {
                     e.stopPropagation();
                 });
+            } else {
+                console.error('❌ 移动端菜单元素未找到！');
+                console.error('mobileMenuButton:', mobileMenuButton);
+                console.error('mobileMenu:', mobileMenu);
             }
             
             // 移动端翻译质量选择同步
