@@ -1423,14 +1423,19 @@
 
         // 执行翻译
         async function performTranslation(text, hasImage) {
+            // 获取DOM元素引用
+            const outputPlaceholder = document.getElementById('outputPlaceholder');
+            
             // 显示加载状态
             setButtonLoading(true, '开始处理...');
-            outputSection.classList.add('hidden');
-            ocrSection.classList.add('hidden');
             
-            // 隐藏右侧占位符
-            const outputPlaceholder = document.getElementById('outputPlaceholder');
-            if (outputPlaceholder) {
+            // 只在图片翻译时隐藏OCR部分，保持翻译结果显示
+            if (hasImage) {
+                ocrSection.classList.add('hidden');
+            }
+            
+            // 隐藏右侧占位符（如果翻译结果已显示，则保持显示）
+            if (outputPlaceholder && !outputSection.classList.contains('hidden')) {
                 outputPlaceholder.classList.add('hidden');
             }
             
@@ -1445,6 +1450,14 @@
                 // 如果有图片，先进行OCR
                 if (hasImage && currentUploadedFile) {
                     updateProgress(10, '正在识别图片文字...');
+                    
+                    // 在翻译结果区域显示OCR识别提示
+                    outputSection.classList.remove('hidden');
+                    outputText.placeholder = '正在识别图片中的文字...';
+                    if (outputPlaceholder) {
+                        outputPlaceholder.classList.add('hidden');
+                    }
+                    
                     ocrResult = await performOCR(currentUploadedFile);
                     finalText = ocrResult.text;
                     
@@ -1456,6 +1469,12 @@
                     const formattedParagraphs = analyzeAndFormatOCRText(finalText);
                     displayFormattedOCRText(formattedParagraphs);
                     ocrSection.classList.remove('hidden');
+                    
+                    // 确保翻译结果区域可见
+                    outputSection.classList.remove('hidden');
+                    if (outputPlaceholder) {
+                        outputPlaceholder.classList.add('hidden');
+                    }
                     
                     // 将OCR结果填入输入框
                     inputText.value = finalText;
@@ -1507,10 +1526,10 @@
                 
                 // 显示翻译结果
                 outputText.value = translationResult.translatedText;
+                outputText.placeholder = '翻译结果将显示在这里...'; // 恢复默认占位符
                 outputSection.classList.remove('hidden');
                 
                 // 确保隐藏占位符
-                const outputPlaceholder = document.getElementById('outputPlaceholder');
                 if (outputPlaceholder) {
                     outputPlaceholder.classList.add('hidden');
                 }
@@ -1584,10 +1603,8 @@
                 setButtonLoading(false);
                 updateProgress(0, '');
                 
-                // 如果没有显示翻译结果，则显示占位符
-                const outputSection = document.getElementById('outputSection');
-                const outputPlaceholder = document.getElementById('outputPlaceholder');
-                if (outputSection && outputPlaceholder && outputSection.classList.contains('hidden')) {
+                // 只有在真的没有翻译结果时才显示占位符
+                if (outputSection && outputPlaceholder && outputSection.classList.contains('hidden') && !outputText.value.trim()) {
                     outputPlaceholder.classList.remove('hidden');
                 }
             }
