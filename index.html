@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI智能图文翻译助手 - 免费在线OCR识别和多语言翻译工具，支持图片文字识别、ChatGPT翻译、Google翻译">
+    <meta name="keywords" content="翻译工具,OCR识别,图片翻译,在线翻译,ChatGPT翻译,Google翻译,多语言翻译">
+    <meta name="author" content="AI智能翻译助手">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://your-username.github.io/translate-tool/">
+    <meta property="og:title" content="AI智能图文翻译助手 - 免费在线翻译工具">
+    <meta property="og:description" content="一键完成图片文字识别和多语言翻译，支持ChatGPT高质量翻译和Google免费翻译">
+    <meta property="og:image" content="https://your-username.github.io/translate-tool/preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://your-username.github.io/translate-tool/">
+    <meta property="twitter:title" content="AI智能图文翻译助手">
+    <meta property="twitter:description" content="一键完成图片文字识别和多语言翻译，支持ChatGPT高质量翻译和Google免费翻译">
+    <meta property="twitter:image" content="https://your-username.github.io/translate-tool/preview.png">
+    
+    <title>AI智能图文翻译助手 - 免费OCR识别和多语言翻译工具</title>
+    
+    <!-- Google Analytics (替换为您自己的GA ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'GA_MEASUREMENT_ID');
+    </script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tesseract.js for OCR - Multiple CDN sources for reliability -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" 
+            onerror="this.onerror=null; this.src='https://unpkg.com/tesseract.js@5/dist/tesseract.min.js';"
+            onload="console.log('Tesseract.js loaded successfully')">
+    </script>
+    
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#2563eb',
+                        'primary-dark': '#1d4ed8',
+                        'secondary': '#64748b',
+                        'success': '#10b981',
+                        'error': '#ef4444',
+                        'warning': '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Custom animations */
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        .animate-pulse-soft {
+            animation: pulse-soft 2s ease-in-out infinite;
+        }
+        
+        /* Drag and drop styles */
+        .drag-over {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+        }
+        
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Progress bar styles */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fas fa-language text-primary text-2xl mr-3"></i>
+                        <h1 class="text-xl font-bold text-gray-900">AI翻译助手</h1>
+                    </div>
+                </div>
+                
+                <!-- Language Selection -->
+                <div class="flex items-center space-x-4">
+                    <!-- Translation Service Selector -->
+                    <div class="relative">
+                        <select id="translationService" class="appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                            <option value="google">Google 翻译</option>
+                            <option value="chatgpt">ChatGPT (高质量)</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                    </div>
+                    
+                    <!-- API Key Setting Button -->
+                    <button id="apiKeyBtn" class="p-2 text-gray-500 hover:text-primary transition-colors" title="API密钥设置">
+                        <i class="fas fa-key"></i>
+                    </button>
+                    
+                    <div class="relative">
+                        <select id="sourceLanguage" class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <option value="auto">自动检测</option>
+                            <option value="zh-CN">中文</option>
+                            <option value="en">English</option>
+                            <option value="ja">日语</option>
+                            <option value="ko">韩语</option>
+                            <option value="es">西班牙语</option>
+                            <option value="fr">法语</option>
+                            <option value="de">德语</option>
+                            <option value="ru">俄语</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                    </div>
+                    
+                    <button id="swapLanguages" class="p-2 text-gray-500 hover:text-primary transition-colors">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+                    
+                    <div class="relative">
+                        <select id="targetLanguage" class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <option value="en">English</option>
+                            <option value="zh-CN">中文</option>
+                            <option value="ja">日语</option>
+                            <option value="ko">韩语</option>
+                            <option value="es">西班牙语</option>
+                            <option value="fr">法语</option>
+                            <option value="de">德语</option>
+                            <option value="ru">俄语</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Input Section -->
+            <div class="space-y-6">
+                <!-- Text Input -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-keyboard text-primary mr-2"></i>
+                            文本翻译
+                        </h2>
+                        <button id="clearTextInput" class="text-gray-400 hover:text-error transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="relative">
+                        <textarea 
+                            id="textInput" 
+                            placeholder="输入要翻译的文本，或上传图片后直接点击翻译按钮进行OCR+翻译..."
+                            class="w-full h-32 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none custom-scrollbar"
+                            maxlength="5000"
+                        ></textarea>
+                        <div class="absolute bottom-2 right-2 text-xs text-gray-400">
+                            <span id="charCount">0</span>/5000
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Image Upload Section -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-image text-primary mr-2"></i>
+                            图片翻译
+                        </h2>
+                        <div class="flex items-center space-x-2">
+                            <!-- OCR Engine Status Indicator -->
+                            <div id="ocrStatusIndicator" class="flex items-center px-2 py-1 rounded-lg text-xs">
+                                <i id="ocrStatusIcon" class="fas fa-circle text-yellow-500 mr-1"></i>
+                                <span id="ocrStatusText">初始化中</span>
+                            </div>
+                            
+                            <!-- OCR Language Selection -->
+                            <select id="ocrLanguage" class="appearance-none bg-gray-50 border border-gray-300 rounded-lg px-3 py-1 pr-6 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <option value="chi_sim+eng">中英文</option>
+                                <option value="chi_sim">中文简体</option>
+                                <option value="chi_tra">中文繁体</option>
+                                <option value="eng">English</option>
+                                <option value="jpn">日语</option>
+                                <option value="kor">韩语</option>
+                                <option value="spa">西班牙语</option>
+                                <option value="fra">法语</option>
+                                <option value="deu">德语</option>
+                                <option value="rus">俄语</option>
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                            <button id="clearImageInput" class="text-gray-400 hover:text-error transition-colors ml-2">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Drag and Drop Zone -->
+                    <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+                        <div id="uploadPlaceholder" class="space-y-4">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400"></i>
+                            <div>
+                                <p class="text-lg text-gray-600">拖拽图片到这里</p>
+                                <p class="text-sm text-gray-500">或者点击上传，支持 Ctrl+V 粘贴</p>
+                                <p class="text-xs text-primary mt-2">💡 上传图片后直接点击翻译按钮即可自动识别+翻译</p>
+                            </div>
+                            <div class="flex justify-center space-x-2">
+                                <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs">JPG</span>
+                                <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs">PNG</span>
+                                <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs">WEBP</span>
+                                <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs">GIF</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <div id="imagePreview" class="hidden">
+                            <img id="previewImage" class="max-w-full max-h-64 mx-auto rounded-lg shadow-md" alt="预览图片">
+                            <p class="text-sm text-gray-500 mt-2">点击重新选择图片</p>
+                            <p class="text-xs text-primary mt-1">💡 可直接点击翻译按钮进行OCR识别+翻译</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden File Input -->
+                    <input type="file" id="imageInput" accept="image/*" class="hidden">
+                </div>
+                
+                <!-- Action Buttons -->
+                <div>
+                    <button id="translateBtn" class="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2">
+                        <i class="fas fa-language"></i>
+                        <span>开始翻译</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Output Section -->
+            <div class="space-y-6">
+                <!-- Translation Result -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-file-alt text-success mr-2"></i>
+                            翻译结果
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button id="copyResult" class="text-gray-400 hover:text-success transition-colors" title="复制翻译结果">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button id="clearResult" class="text-gray-400 hover:text-error transition-colors" title="清空结果">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        <textarea 
+                            id="translationResult" 
+                            placeholder="翻译结果将显示在这里..."
+                            class="w-full h-32 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-success focus:border-transparent resize-none custom-scrollbar"
+                            readonly
+                        ></textarea>
+                        
+                        <!-- Loading Spinner -->
+                        <div id="loadingSpinner" class="hidden absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <div class="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                                <span class="text-primary font-medium">翻译中...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- OCR Result -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-search text-warning mr-2"></i>
+                            OCR识别结果
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button id="copyOCR" class="text-gray-400 hover:text-success transition-colors" title="复制OCR结果">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button id="clearOCR" class="text-gray-400 hover:text-error transition-colors" title="清空OCR结果">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        <textarea 
+                            id="ocrResult" 
+                            placeholder="OCR识别结果将显示在这里..."
+                            class="w-full h-32 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning focus:border-transparent resize-none custom-scrollbar"
+                        ></textarea>
+                        
+                        <!-- OCR Loading Spinner with Progress -->
+                        <div id="ocrLoadingSpinner" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-90 rounded-lg">
+                            <div class="flex items-center space-x-2 mb-3">
+                                <div class="animate-spin rounded-full h-6 w-6 border-2 border-warning border-t-transparent"></div>
+                                <span class="text-warning font-medium">OCR识别中...</span>
+                            </div>
+                            <div class="w-48 progress-bar">
+                                <div id="ocrProgress" class="progress-bar-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-2">
+                                <span id="ocrStatus">正在初始化...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Translation History (Optional) -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-history text-purple-500 mr-2"></i>
+                            翻译历史
+                        </h2>
+                        <button id="clearHistory" class="text-gray-400 hover:text-error transition-colors" title="清空历史">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="historyList" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                        <div class="text-gray-500 text-sm text-center py-4">
+                            暂无翻译历史
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2">
+        <!-- Toast notifications will be inserted here -->
+    </div>
+
+    <!-- API Key Setting Modal -->
+    <div id="apiKeyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <i class="fas fa-key text-primary mr-2"></i>
+                    API密钥设置
+                </h3>
+                <button id="closeApiKeyModal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        OpenAI API密钥 (ChatGPT)
+                    </label>
+                    <input type="password" id="openaiApiKey" 
+                           placeholder="sk-..." 
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">
+                        用于ChatGPT翻译服务，密钥将安全存储在本地
+                    </p>
+                </div>
+                
+
+                
+
+                
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-gray-500 mr-2 mt-0.5"></i>
+                        <div class="text-sm text-gray-800">
+                            <p class="font-medium mb-1">如何获取OpenAI API密钥：</p>
+                            <ol class="list-decimal list-inside space-y-1 text-xs ml-2">
+                                <li>访问 <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-600 underline">OpenAI API Keys</a></li>
+                                <li>登录您的OpenAI账户</li>
+                                <li>点击"Create new secret key"</li>
+                                <li>复制生成的密钥（以sk-开头）</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-amber-500 mr-2 mt-0.5"></i>
+                        <div class="text-sm text-amber-800">
+                            <p class="font-medium mb-1">注意事项：</p>
+                            <ul class="list-disc list-inside space-y-1 text-xs">
+                                <li>ChatGPT翻译服务需要消耗API额度</li>
+                                <li>API密钥仅存储在您的浏览器中，不会上传到服务器</li>
+                                <li>请妥善保管您的API密钥，避免泄露</li>
+                                <li>建议定期检查API使用情况和余额</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col space-y-3">
+                    <div class="flex space-x-3">
+                        <button id="saveApiKey" class="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                            保存设置
+                        </button>
+                        <button id="resetChatGPTConfig" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-refresh mr-1"></i>重置配置
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Detail Modal -->
+    <div id="historyDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <i class="fas fa-history text-purple-500 mr-2"></i>
+                    翻译历史详情
+                </h3>
+                <button id="closeHistoryDetailModal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- 时间戳和操作 -->
+                <div class="flex justify-between items-center bg-gray-50 rounded-lg p-3">
+                    <div>
+                        <span class="text-sm text-gray-600">翻译时间：</span>
+                        <span id="historyDetailTime" class="text-sm font-medium text-gray-900"></span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="useCurrentHistory" class="px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors">
+                            <i class="fas fa-redo mr-1"></i>使用此翻译
+                        </button>
+                        <button id="copyHistoryOriginal" class="px-3 py-1 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-copy mr-1"></i>复制原文
+                        </button>
+                        <button id="copyHistoryTranslation" class="px-3 py-1 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors">
+                            <i class="fas fa-copy mr-1"></i>复制译文
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 语言信息 -->
+                <div class="flex items-center space-x-4 text-sm text-gray-600">
+                    <span id="historyDetailSourceLang" class="px-2 py-1 bg-blue-100 text-blue-800 rounded"></span>
+                    <i class="fas fa-arrow-right text-gray-400"></i>
+                    <span id="historyDetailTargetLang" class="px-2 py-1 bg-green-100 text-green-800 rounded"></span>
+                </div>
+                
+                <!-- 原文 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-file-text mr-1"></i>原文
+                    </label>
+                    <div id="historyDetailOriginal" class="w-full p-4 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 whitespace-pre-wrap text-sm min-h-[80px] max-h-[200px] overflow-y-auto custom-scrollbar"></div>
+                </div>
+                
+                <!-- 译文 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-language mr-1"></i>译文
+                    </label>
+                    <div id="historyDetailTranslation" class="w-full p-4 border border-gray-300 rounded-lg bg-green-50 text-gray-900 whitespace-pre-wrap text-sm min-h-[80px] max-h-[200px] overflow-y-auto custom-scrollbar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- JavaScript -->
+    <script>
+        // Global variables
+        let currentImage = null;
+        let currentImageFile = null;
+        let translationHistory = [];
+        let ocrWorker = null;
+        let imageOcrProcessed = false; // 追踪当前图片是否已经OCR过
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            initializeDragAndDrop();
+            initializePasteSupport();
+            loadTranslationHistory();
+            
+            // 初始化OCR状态指示器
+            updateOCRStatusIndicator('loading', '准备初始化');
+            
+            // 添加网络状态监听
+            initializeNetworkMonitoring();
+            
+
+            
+            // 延迟初始化OCR，确保页面完全加载
+            setTimeout(() => {
+                initializeOCRWorker();
+            }, 1000);
+        });
+
+        // 网络状态监控
+        function initializeNetworkMonitoring() {
+            // 监听网络状态变化
+            window.addEventListener('online', () => {
+                console.log('网络连接已恢复');
+                showToast('📶 网络连接已恢复，可以重试OCR初始化', 'success');
+                
+                // 如果OCR引擎未就绪，提示用户可以重试
+                if (!ocrWorker) {
+                    setTimeout(() => {
+                        showToast('💡 提示：现在可以尝试重新初始化OCR引擎', 'info');
+                    }, 2000);
+                }
+            });
+
+            window.addEventListener('offline', () => {
+                console.log('网络连接已断开');
+                showToast('📶 网络连接已断开，OCR功能可能无法正常工作', 'warning');
+            });
+
+            // 初始网络状态检查
+            if (!navigator.onLine) {
+                updateOCRStatusIndicator('warning', '网络离线');
+                showToast('⚠️ 当前网络离线，OCR功能可能无法初始化', 'warning');
+            }
+        }
+
+        // Initialize OCR Worker with enhanced error handling
+        let ocrInitRetryCount = 0;
+        const maxOcrRetries = 3;
+        
+        async function initializeOCRWorker() {
+            try {
+                // 检查Tesseract是否加载
+                if (typeof Tesseract === 'undefined') {
+                    console.warn('Tesseract.js未加载，等待加载完成...');
+                    
+                    if (ocrInitRetryCount < maxOcrRetries) {
+                        ocrInitRetryCount++;
+                        showToast(`OCR组件加载中... (尝试 ${ocrInitRetryCount}/${maxOcrRetries})`, 'warning');
+                        
+                        // 等待更长时间让CDN加载完成
+                        setTimeout(async () => {
+                            await initializeOCRWorker();
+                        }, 3000);
+                        return;
+                    } else {
+                        throw new Error('Tesseract.js加载失败，请检查网络连接');
+                    }
+                }
+
+                updateOCRStatusIndicator('loading', '正在初始化');
+                console.log('开始初始化OCR Worker...');
+                
+                // 创建Worker时使用更详细的配置
+                ocrWorker = await Tesseract.createWorker('eng', 1, {
+                    logger: m => {
+                        updateOCRProgress(m);
+                        console.log('OCR初始化进度:', m);
+                        
+                        // 显示更详细的初始化状态
+                        if (m.status === 'loading tesseract core') {
+                            updateOCRStatusIndicator('loading', '加载核心');
+                        } else if (m.status === 'initializing tesseract') {
+                            updateOCRStatusIndicator('loading', '初始化引擎');
+                        } else if (m.status === 'loading language traineddata') {
+                            updateOCRStatusIndicator('loading', '加载语言包');
+                        } else if (m.status === 'initializing api') {
+                            updateOCRStatusIndicator('loading', '初始化API');
+                        }
+                    },
+                    cachePath: './', // 使用相对路径缓存
+                    cacheMethod: 'none', // 禁用缓存以避免CORS问题
+                });
+                
+                console.log('OCR Worker初始化成功');
+                showToast('✅ OCR引擎初始化成功！', 'success');
+                
+                // 重置重试计数器
+                ocrInitRetryCount = 0;
+                
+            } catch (error) {
+                console.error('OCR Worker初始化失败:', error);
+                ocrInitRetryCount++;
+                
+                if (ocrInitRetryCount <= maxOcrRetries) {
+                    const errorMsg = `OCR引擎初始化失败，正在重试... (${ocrInitRetryCount}/${maxOcrRetries})`;
+                    showToast(errorMsg, 'warning');
+                    
+                    // 等待后重试
+                    setTimeout(async () => {
+                        await initializeOCRWorker();
+                    }, 5000);
+                } else {
+                    updateOCRStatusIndicator('error', '初始化失败');
+                    showToast('❌ OCR引擎初始化失败，请检查网络连接后刷新页面', 'error');
+                    
+                    // 显示诊断信息
+                    showOCRDiagnosticInfo(error);
+                }
+            }
+        }
+
+        // 重试OCR初始化
+        async function retryOCRInitialization() {
+            console.log('手动重试OCR初始化...');
+            
+            // 重置重试计数器
+            ocrInitRetryCount = 0;
+            
+            if (typeof Tesseract === 'undefined') {
+                showToast('❌ OCR组件未加载，正在尝试重新加载页面组件...', 'error');
+                
+                // 尝试动态加载Tesseract.js
+                try {
+                    await loadTesseractDynamically();
+                } catch (error) {
+                    showToast('❌ 无法加载OCR组件，请检查网络连接并刷新页面', 'error');
+                    return;
+                }
+            }
+            
+            await initializeOCRWorker();
+        }
+
+        // 动态加载Tesseract.js
+        async function loadTesseractDynamically() {
+            return new Promise((resolve, reject) => {
+                if (typeof Tesseract !== 'undefined') {
+                    resolve();
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/tesseract.js@5/dist/tesseract.min.js';
+                script.onload = () => {
+                    console.log('Tesseract.js动态加载成功');
+                    showToast('OCR组件动态加载成功', 'success');
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error('Tesseract.js动态加载失败');
+                    reject(new Error('动态加载失败'));
+                };
+                
+                document.head.appendChild(script);
+                showToast('正在动态加载OCR组件...', 'info');
+            });
+        }
+
+        // 显示OCR诊断信息
+        function showOCRDiagnosticInfo(error) {
+            console.group('OCR诊断信息');
+            console.log('错误详情:', error);
+            console.log('浏览器信息:', navigator.userAgent);
+            console.log('Tesseract可用性:', typeof Tesseract !== 'undefined');
+            console.log('网络状态:', navigator.onLine ? '在线' : '离线');
+            console.groupEnd();
+
+            // 显示用户友好的诊断信息
+            let diagnosticMsg = '🔍 OCR诊断信息：\n';
+            
+            if (typeof Tesseract === 'undefined') {
+                diagnosticMsg += '• OCR组件未成功加载\n';
+                diagnosticMsg += '• 可能是网络连接问题\n';
+            } else {
+                diagnosticMsg += '• OCR组件已加载\n';
+                diagnosticMsg += '• 可能是初始化配置问题\n';
+            }
+            
+            if (!navigator.onLine) {
+                diagnosticMsg += '• 当前网络状态：离线\n';
+            }
+            
+            diagnosticMsg += '\n💡 解决建议：\n';
+            diagnosticMsg += '1. 检查网络连接\n';
+            diagnosticMsg += '2. 刷新页面重试\n';
+            diagnosticMsg += '3. 尝试切换网络环境\n';
+            diagnosticMsg += '4. 使用其他浏览器测试';
+
+            showToast(diagnosticMsg, 'warning');
+        }
+
+
+
+        // 显示OCR帮助模态框
+        function showOCRHelpModal() {
+            const helpMsg = `
+                🔧 OCR引擎故障排除帮助
+                
+                📋 常见问题及解决方案：
+                
+                1️⃣ 网络连接问题
+                • 检查网络连接是否正常
+                • 尝试刷新页面
+                • 切换到其他网络环境
+                
+                2️⃣ 浏览器兼容性
+                • 建议使用 Chrome、Firefox、Edge 最新版本
+                • 清除浏览器缓存和Cookie
+                • 禁用广告拦截器
+                
+                3️⃣ 防火墙/代理问题
+                • 检查防火墙设置
+                • 暂时关闭VPN
+                • 检查企业网络限制
+                
+                4️⃣ 其他解决方案
+                • 尝试无痕/隐私浏览模式
+                • 重启浏览器
+                • 使用手机热点测试
+                
+                💡 如果问题持续存在：
+                • 可以跳过OCR，直接输入文本进行翻译
+                • 使用其他OCR工具识别文字后粘贴
+                • 联系技术支持获取帮助
+            `;
+            
+            showToast(helpMsg, 'info');
+        }
+
+        // 更新OCR状态指示器
+        function updateOCRStatusIndicator(status, message) {
+            const indicator = document.getElementById('ocrStatusIndicator');
+            const icon = document.getElementById('ocrStatusIcon');
+            const text = document.getElementById('ocrStatusText');
+            
+            if (!indicator || !icon || !text) return;
+            
+            switch (status) {
+                case 'loading':
+                    icon.className = 'fas fa-spinner fa-spin text-blue-500 mr-1';
+                    text.textContent = message || '初始化中';
+                    indicator.className = 'flex items-center px-2 py-1 rounded-lg text-xs bg-blue-50 text-blue-700';
+                    break;
+                case 'ready':
+                    icon.className = 'fas fa-check-circle text-green-500 mr-1';
+                    text.textContent = message || '就绪';
+                    indicator.className = 'flex items-center px-2 py-1 rounded-lg text-xs bg-green-50 text-green-700';
+                    break;
+                case 'error':
+                    icon.className = 'fas fa-exclamation-circle text-red-500 mr-1';
+                    text.textContent = message || '错误';
+                    indicator.className = 'flex items-center px-2 py-1 rounded-lg text-xs bg-red-50 text-red-700';
+                    break;
+                case 'warning':
+                    icon.className = 'fas fa-exclamation-triangle text-yellow-500 mr-1';
+                    text.textContent = message || '警告';
+                    indicator.className = 'flex items-center px-2 py-1 rounded-lg text-xs bg-yellow-50 text-yellow-700';
+                    break;
+                default:
+                    icon.className = 'fas fa-circle text-gray-500 mr-1';
+                    text.textContent = message || '未知';
+                    indicator.className = 'flex items-center px-2 py-1 rounded-lg text-xs bg-gray-50 text-gray-700';
+            }
+        }
+
+
+
+
+
+        // Update OCR progress
+        function updateOCRProgress(m) {
+            const statusElement = document.getElementById('ocrStatus');
+            const progressElement = document.getElementById('ocrProgress');
+            
+            if (m.status === 'recognizing text') {
+                const progress = Math.round(m.progress * 100);
+                if (progressElement) {
+                    progressElement.style.width = progress + '%';
+                }
+                if (statusElement) {
+                    statusElement.textContent = `识别进度: ${progress}%`;
+                }
+            } else if (m.status) {
+                if (statusElement) {
+                    statusElement.textContent = getOCRStatusText(m.status);
+                }
+            }
+        }
+
+        // Get OCR status text in Chinese
+        function getOCRStatusText(status) {
+            const statusMap = {
+                'initializing api': '正在初始化API...',
+                'initializing tesseract': '正在初始化引擎...',
+                'initializing scheduler': '正在初始化调度器...',
+                'loading language traineddata': '正在加载语言包...',
+                'initializing api': '正在初始化API...',
+                'recognizing text': '正在识别文字...',
+                'loading image': '正在加载图片...',
+                'preprocessing image': '正在预处理图片...',
+                'recognizing text': '正在识别文字...'
+            };
+            return statusMap[status] || status;
+        }
+
+        // Initialize event listeners
+        function initializeEventListeners() {
+            // Text input character counter
+            const textInput = document.getElementById('textInput');
+            const charCount = document.getElementById('charCount');
+            
+            textInput.addEventListener('input', function() {
+                charCount.textContent = this.value.length;
+            });
+
+            // Language swap
+            document.getElementById('swapLanguages').addEventListener('click', swapLanguages);
+
+            // Clear buttons
+            document.getElementById('clearTextInput').addEventListener('click', clearTextInput);
+            document.getElementById('clearImageInput').addEventListener('click', clearImageInput);
+            document.getElementById('clearResult').addEventListener('click', clearResult);
+            document.getElementById('clearOCR').addEventListener('click', clearOCR);
+            document.getElementById('clearHistory').addEventListener('click', clearHistory);
+
+            // Copy buttons
+            document.getElementById('copyResult').addEventListener('click', () => copyToClipboard('translationResult'));
+            document.getElementById('copyOCR').addEventListener('click', () => copyToClipboard('ocrResult'));
+
+            // Action buttons
+            document.getElementById('translateBtn').addEventListener('click', translateText);
+
+            // Image input
+            document.getElementById('imageInput').addEventListener('change', handleImageSelect);
+            document.getElementById('dropZone').addEventListener('click', () => {
+                document.getElementById('imageInput').click();
+            });
+
+            // API Key setting
+            document.getElementById('apiKeyBtn').addEventListener('click', openApiKeyModal);
+            document.getElementById('closeApiKeyModal').addEventListener('click', closeApiKeyModal);
+            document.getElementById('saveApiKey').addEventListener('click', saveApiKey);
+
+            // Translation service change
+            document.getElementById('translationService').addEventListener('change', handleTranslationServiceChange);
+        }
+
+        // Initialize drag and drop functionality
+        function initializeDragAndDrop() {
+            const dropZone = document.getElementById('dropZone');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                dropZone.classList.add('drag-over');
+            }
+
+            function unhighlight(e) {
+                dropZone.classList.remove('drag-over');
+            }
+
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                handleFiles(files);
+            }
+        }
+
+        // Initialize paste support
+        function initializePasteSupport() {
+            document.addEventListener('paste', function(e) {
+                const items = e.clipboardData.items;
+                
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const blob = items[i].getAsFile();
+                        handleImageFile(blob);
+                        break;
+                    }
+                }
+            });
+        }
+
+        // Handle file selection
+        function handleFiles(files) {
+            if (files.length > 0) {
+                handleImageFile(files[0]);
+            }
+        }
+
+        // Handle image file
+        function handleImageFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('请选择图片文件', 'error');
+                return;
+            }
+
+            // Store both the file object and base64 data
+            currentImageFile = file;
+            imageOcrProcessed = false; // 标记新图片还未OCR
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImage = e.target.result;
+                displayImagePreview(currentImage);
+                showToast('图片上传成功', 'success');
+                
+                // 提示用户可以直接翻译
+                setTimeout(() => {
+                    showToast('💡 提示：您可以直接点击"开始翻译"按钮，系统会自动进行OCR识别', 'info');
+                }, 1000);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Handle image select from input
+        function handleImageSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageFile(file);
+            }
+        }
+
+        // Display image preview
+        function displayImagePreview(imageSrc) {
+            const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImage = document.getElementById('previewImage');
+
+            uploadPlaceholder.classList.add('hidden');
+            imagePreview.classList.remove('hidden');
+            previewImage.src = imageSrc;
+        }
+
+        // Clear image input
+        function clearImageInput() {
+            currentImage = null;
+            currentImageFile = null;
+            imageOcrProcessed = false; // 重置OCR状态
+            document.getElementById('imageInput').value = '';
+            document.getElementById('uploadPlaceholder').classList.remove('hidden');
+            document.getElementById('imagePreview').classList.add('hidden');
+            showToast('图片已清除', 'info');
+        }
+
+        // Clear text input
+        function clearTextInput() {
+            document.getElementById('textInput').value = '';
+            document.getElementById('charCount').textContent = '0';
+            // 如果当前有图片且已经OCR过，重置OCR状态允许重新识别
+            if ((currentImage || currentImageFile) && imageOcrProcessed) {
+                imageOcrProcessed = false;
+                showToast('文本已清除，可重新识别当前图片', 'info');
+            }
+        }
+
+        // Clear results
+        function clearResult() {
+            document.getElementById('translationResult').value = '';
+        }
+
+        function clearOCR() {
+            document.getElementById('ocrResult').value = '';
+            // 如果当前有图片，标记为未OCR状态，允许重新识别
+            if (currentImage || currentImageFile) {
+                imageOcrProcessed = false;
+                showToast('OCR结果已清除，可重新识别当前图片', 'info');
+            }
+        }
+
+        // Swap languages
+        function swapLanguages() {
+            const sourceLanguage = document.getElementById('sourceLanguage');
+            const targetLanguage = document.getElementById('targetLanguage');
+            
+            const temp = sourceLanguage.value;
+            sourceLanguage.value = targetLanguage.value;
+            targetLanguage.value = temp;
+            
+            showToast('语言已交换', 'info');
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            element.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                showToast('复制成功', 'success');
+            } catch (err) {
+                showToast('复制失败', 'error');
+            }
+        }
+
+        // Translation API configuration
+        const TRANSLATION_CONFIG = {
+            // 可选择的翻译服务提供商
+            providers: {
+                google: {
+                    name: 'Google Translate',
+                    baseUrl: 'https://translate.googleapis.com/translate_a/single',
+                    free: true,
+                    quality: 'good'
+                },
+                chatgpt: {
+                    name: 'ChatGPT',
+                    baseUrl: 'https://api.openai.com/v1/chat/completions',
+                    free: false,
+                    quality: 'excellent',
+                    requiresKey: true
+                }
+            },
+            
+            // 当前使用的提供商
+            currentProvider: 'google',
+            
+            // OpenAI API配置
+            openai: {
+                apiKey: localStorage.getItem('openai_api_key') || '',
+                model: 'gpt-3.5-turbo',
+                maxTokens: 2000,
+                temperature: 0.3
+            },
+            
+
+            
+            // 语言代码映射
+            languageMap: {
+                'auto': 'auto',
+                'zh-CN': 'zh',
+                'en': 'en',
+                'ja': 'ja',
+                'ko': 'ko',
+                'es': 'es',
+                'fr': 'fr',
+                'de': 'de',
+                'ru': 'ru'
+            },
+            
+            // ChatGPT语言映射（更详细的语言名称）
+            chatgptLanguageMap: {
+                'auto': 'auto-detect',
+                'zh-CN': 'Chinese (Simplified)',
+                'en': 'English',
+                'ja': 'Japanese',
+                'ko': 'Korean',
+                'es': 'Spanish',
+                'fr': 'French',
+                'de': 'German',
+                'ru': 'Russian'
+            },
+            
+
+            
+
+        };
+
+        // Google Translate API (免费接口)
+        async function translateWithGoogle(text, sourceLang, targetLang) {
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data && data[0] && data[0][0] && data[0][0][0]) {
+                    return data[0].map(item => item[0]).join('');
+                }
+                
+                throw new Error('无法获取翻译结果');
+            } catch (error) {
+                console.error('Google翻译API错误:', error);
+                throw error;
+            }
+                }
+
+        
+
+        // ChatGPT API翻译
+        async function translateWithChatGPT(text, sourceLang, targetLang) {
+            const apiKey = TRANSLATION_CONFIG.openai.apiKey;
+            
+            if (!apiKey) {
+                throw new Error('请先设置OpenAI API密钥');
+            }
+            
+            // 获取语言名称
+            const sourceLanguageName = TRANSLATION_CONFIG.chatgptLanguageMap[sourceLang] || sourceLang;
+            const targetLanguageName = TRANSLATION_CONFIG.chatgptLanguageMap[targetLang] || targetLang;
+            
+            // 构建提示词
+            let prompt;
+            if (sourceLang === 'auto') {
+                prompt = `请将以下文本翻译成${targetLanguageName}，要求翻译自然流畅、准确地道。只返回翻译结果，不要添加任何解释：\n\n${text}`;
+            } else {
+                prompt = `请将以下${sourceLanguageName}文本翻译成${targetLanguageName}，要求翻译自然流畅、准确地道。只返回翻译结果，不要添加任何解释：\n\n${text}`;
+            }
+            
+            try {
+                const response = await fetch(TRANSLATION_CONFIG.providers.chatgpt.baseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: TRANSLATION_CONFIG.openai.model,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你是一个专业的翻译助手，能够准确、自然地翻译各种语言。请只返回翻译结果，不要添加任何解释或额外信息。'
+                            },
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        max_tokens: TRANSLATION_CONFIG.openai.maxTokens,
+                        temperature: TRANSLATION_CONFIG.openai.temperature
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`OpenAI API错误: ${errorData.error?.message || response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                    return data.choices[0].message.content.trim();
+                }
+                
+                throw new Error('无法获取ChatGPT翻译结果');
+            } catch (error) {
+                console.error('ChatGPT API错误:', error);
+                throw error;
+            }
+        }
+
+        // 智能翻译函数（带重试机制和增强错误处理）
+        async function performTranslation(text, sourceLang, targetLang) {
+            // 规范化语言代码
+            const normalizedSourceLang = TRANSLATION_CONFIG.languageMap[sourceLang] || sourceLang;
+            const normalizedTargetLang = TRANSLATION_CONFIG.languageMap[targetLang] || targetLang;
+            
+            // 如果源语言和目标语言相同，直接返回原文
+            if (normalizedSourceLang === normalizedTargetLang) {
+                return text;
+            }
+            
+            // 获取用户选择的翻译服务
+            const selectedService = document.getElementById('translationService').value;
+            
+            // 将用户选择的服务放在最前面，其他服务作为备选
+            const allProviders = ['google', 'chatgpt'];
+            const providers = [selectedService, ...allProviders.filter(p => p !== selectedService)];
+            let lastError;
+            
+            for (const provider of providers) {
+                try {
+                    let result;
+                    
+                    switch (provider) {
+                        case 'google':
+                            result = await translateWithGoogle(text, normalizedSourceLang, normalizedTargetLang);
+                            break;
+                        case 'chatgpt':
+                            result = await translateWithChatGPT(text, normalizedSourceLang, normalizedTargetLang);
+                            break;
+                        default:
+                            continue;
+                    }
+                    
+                    if (result && result.trim()) {
+                        // 在控制台显示使用的翻译服务
+                        console.log(`翻译成功，使用服务：${TRANSLATION_CONFIG.providers[provider].name}`);
+                        
+                        // 如果不是用户选择的服务，显示提示
+                        if (provider !== selectedService) {
+                            let switchMessage = `${TRANSLATION_CONFIG.providers[selectedService].name} 不可用，已切换到 ${TRANSLATION_CONFIG.providers[provider].name}`;
+                            
+                            // 针对Claude API提供特殊说明
+                            if (selectedService === 'claude') {
+                                switchMessage += '\n\n💡 提示：Claude API在浏览器中可能遇到跨域限制，这是正常现象';
+                            }
+                            
+                            showToast(switchMessage, 'warning');
+                        }
+                        
+                        return result;
+                    }
+                } catch (error) {
+                    lastError = error;
+                    console.warn(`${provider} 翻译服务失败，尝试下一个服务...`);
+                    
+                    // 针对Claude API提供特殊的错误信息
+
+                }
+            }
+            
+            // 如果所有服务都失败，抛出详细错误
+            let errorMessage = '所有翻译服务都不可用';
+            
+            if (lastError) {
+                if (selectedService === 'claude') {
+                    errorMessage = `Claude API暂时不可用: ${lastError.message}`;
+                    errorMessage += '\n\n💡 解决建议：\n1. 检查Claude API密钥是否正确设置\n2. 确认Claude账户有足够余额\n3. 检查网络连接\n4. 尝试刷新页面\n5. 暂时使用Google翻译或ChatGPT';
+                } else {
+                    errorMessage = `翻译失败: ${lastError.message}`;
+                }
+            }
+            
+            throw new Error(errorMessage);
+        }
+
+        // 主要翻译函数
+        async function translateText() {
+            const textInput = document.getElementById('textInput').value.trim();
+            const sourceLanguage = document.getElementById('sourceLanguage').value;
+            const targetLanguage = document.getElementById('targetLanguage').value;
+            
+            // 检查是否有图片且还未OCR过 - 自动执行OCR
+            if ((currentImage || currentImageFile) && !imageOcrProcessed) {
+                showToast('检测到新图片，正在自动进行OCR识别...', 'info');
+                
+                try {
+                    // 先执行OCR识别
+                    await performOCR();
+                    
+                    // OCR完成后，获取识别的文本
+                    const recognizedText = document.getElementById('textInput').value.trim();
+                    
+                    if (!recognizedText) {
+                        showToast('OCR识别未获取到文本，请检查图片质量', 'warning');
+                        return;
+                    }
+                    
+                    // 继续翻译流程
+                    showToast('OCR识别完成，开始翻译...', 'info');
+                    
+                } catch (error) {
+                    showToast('OCR识别失败，请检查图片质量后重试', 'error');
+                    console.error('自动OCR错误:', error);
+                    return;
+                }
+            }
+            
+            // 获取要翻译的文本
+            const finalTextInput = document.getElementById('textInput').value.trim();
+            
+            if (!finalTextInput) {
+                showToast('请输入要翻译的文本或上传图片', 'warning');
+                return;
+            }
+
+            if (sourceLanguage === targetLanguage) {
+                showToast('源语言和目标语言不能相同', 'warning');
+                return;
+            }
+
+            showLoadingSpinner('loadingSpinner', true);
+            
+            try {
+                // 使用真实的翻译API
+                const translatedText = await performTranslation(finalTextInput, sourceLanguage, targetLanguage);
+                
+                // 更新结果
+                document.getElementById('translationResult').value = translatedText;
+                
+                // 添加到历史记录
+                addToHistory(finalTextInput, translatedText, sourceLanguage, targetLanguage);
+                
+                showLoadingSpinner('loadingSpinner', false);
+                showToast('翻译完成', 'success');
+                
+            } catch (error) {
+                showLoadingSpinner('loadingSpinner', false);
+                
+                // 提供详细的错误分析
+                let errorMessage = '翻译失败，请检查网络连接或稍后重试';
+                let errorType = 'error';
+                
+                // 分析错误类型
+                if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
+                    errorMessage = '🌐 网络连接问题\n可能原因：\n1. 网络不稳定\n2. 防火墙阻止\n3. 需要VPN访问\n4. 检查网络设置';
+                    errorType = 'warning';
+                } else if (error.message.includes('API错误')) {
+                    errorMessage = '🔧 API调用错误\n' + error.message + '\n\n建议：检查API密钥设置和网络连接';
+                } else if (error.message.includes('请先设置OpenAI API密钥')) {
+                    errorMessage = '🔑 API密钥未设置\n请点击导航栏的钥匙图标设置API密钥';
+                    errorType = 'warning';
+                } else {
+                    errorMessage = `❌ 翻译失败\n错误详情: ${error.message}\n\n建议：检查API密钥设置和网络连接`;
+                }
+                
+                showToast(errorMessage, errorType);
+                console.error('翻译错误:', error);
+                
+                // 如果是AI引擎失败，提示用户可以使用其他引擎
+                const selectedService = document.getElementById('translationService').value;
+                if (selectedService === 'chatgpt') {
+                    setTimeout(() => {
+                        showToast('💡 提示：ChatGPT暂时不可用，可以尝试切换到Google翻译', 'info');
+                    }, 3000);
+                }
+            }
+        }
+
+        // Perform OCR
+        async function performOCR() {
+            if (!currentImage && !currentImageFile) {
+                showToast('请先上传图片', 'warning');
+                return;
+            }
+
+            // 如果图片已经被OCR过，提示用户
+            if (imageOcrProcessed) {
+                showToast('当前图片已经识别过，将重新进行OCR识别...', 'info');
+                imageOcrProcessed = false; // 重置状态以进行新的OCR
+            }
+
+            if (!ocrWorker) {
+                showToast('OCR引擎未就绪，正在尝试重新初始化...', 'warning');
+                
+                // 尝试重新初始化
+                try {
+                    await retryOCRInitialization();
+                    
+                    // 如果初始化成功，递归调用进行OCR
+                    if (ocrWorker) {
+                        setTimeout(() => performOCR(), 1000);
+                    }
+                } catch (error) {
+                    showToast('OCR引擎初始化失败，请刷新页面', 'error');
+                }
+                return;
+            }
+
+            showLoadingSpinner('ocrLoadingSpinner', true);
+            
+            try {
+                // Get selected OCR language
+                const ocrLanguage = document.getElementById('ocrLanguage').value;
+                
+                // Preprocess image for better OCR results
+                const processedImage = await preprocessImage(currentImageFile || currentImage);
+                
+                // Initialize OCR worker with selected language
+                await ocrWorker.loadLanguage(ocrLanguage);
+                await ocrWorker.initialize(ocrLanguage);
+                
+                // Perform OCR
+                const { data: { text, confidence } } = await ocrWorker.recognize(processedImage);
+                
+                // Clean up the text
+                const cleanedText = cleanOCRText(text);
+                
+                // Update UI with results
+                document.getElementById('ocrResult').value = cleanedText;
+                document.getElementById('textInput').value = cleanedText;
+                document.getElementById('charCount').textContent = cleanedText.length;
+                
+                // 标记当前图片已经OCR过
+                imageOcrProcessed = true;
+                
+                showLoadingSpinner('ocrLoadingSpinner', false);
+                
+                // Show confidence score
+                const confidencePercent = Math.round(confidence);
+                showToast(`OCR识别完成 (置信度: ${confidencePercent}%)`, 'success');
+                
+                // Auto-detect language if needed
+                if (document.getElementById('sourceLanguage').value === 'auto') {
+                    const detectedLang = detectLanguage(cleanedText);
+                    if (detectedLang) {
+                        document.getElementById('sourceLanguage').value = detectedLang;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('OCR识别失败:', error);
+                showLoadingSpinner('ocrLoadingSpinner', false);
+                showToast('OCR识别失败，请检查图片质量或重试', 'error');
+            }
+        }
+
+        // Preprocess image for better OCR results
+        async function preprocessImage(imageSource) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    // Scale image if too large
+                    const maxWidth = 1920;
+                    const maxHeight = 1920;
+                    let { width, height } = img;
+                    
+                    if (width > maxWidth || height > maxHeight) {
+                        const scale = Math.min(maxWidth / width, maxHeight / height);
+                        width = Math.round(width * scale);
+                        height = Math.round(height * scale);
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Draw and enhance image
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Apply image enhancements for better OCR
+                    const imageData = ctx.getImageData(0, 0, width, height);
+                    const data = imageData.data;
+                    
+                    // Increase contrast and brightness
+                    for (let i = 0; i < data.length; i += 4) {
+                        // Convert to grayscale for better text recognition
+                        const grayscale = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+                        
+                        // Apply threshold for better contrast
+                        const threshold = 128;
+                        const value = grayscale > threshold ? 255 : 0;
+                        
+                        data[i] = value;     // Red
+                        data[i + 1] = value; // Green
+                        data[i + 2] = value; // Blue
+                        // Alpha channel remains unchanged
+                    }
+                    
+                    ctx.putImageData(imageData, 0, 0);
+                    resolve(canvas);
+                };
+                
+                img.onerror = reject;
+                
+                if (typeof imageSource === 'string') {
+                    img.src = imageSource;
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = (e) => img.src = e.target.result;
+                    reader.readAsDataURL(imageSource);
+                }
+            });
+        }
+
+        // Clean OCR text
+        function cleanOCRText(text) {
+            return text
+                .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+                .replace(/\n\s*\n/g, '\n')  // Remove multiple newlines
+                .trim();
+        }
+
+        // Simple language detection
+        function detectLanguage(text) {
+            if (!text || text.length < 10) return null;
+            
+            // Check for Chinese characters
+            if (/[\u4e00-\u9fff]/.test(text)) {
+                return 'zh-CN';
+            }
+            
+            // Check for Japanese characters
+            if (/[\u3040-\u309f\u30a0-\u30ff]/.test(text)) {
+                return 'ja';
+            }
+            
+            // Check for Korean characters
+            if (/[\uac00-\ud7af]/.test(text)) {
+                return 'ko';
+            }
+            
+            // Check for Cyrillic (Russian)
+            if (/[\u0400-\u04ff]/.test(text)) {
+                return 'ru';
+            }
+            
+            // Default to English for Latin characters
+            if (/[a-zA-Z]/.test(text)) {
+                return 'en';
+            }
+            
+            return null;
+        }
+
+        // Show/hide loading spinner
+        function showLoadingSpinner(spinnerId, show) {
+            const spinner = document.getElementById(spinnerId);
+            if (show) {
+                spinner.classList.remove('hidden');
+            } else {
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // Add to translation history
+        function addToHistory(originalText, translatedText, sourceLanguage, targetLanguage) {
+            const historyItem = {
+                id: Date.now(),
+                originalText,
+                translatedText,
+                sourceLanguage,
+                targetLanguage,
+                timestamp: new Date().toLocaleString()
+            };
+
+            translationHistory.unshift(historyItem);
+            
+            // Keep only last 10 items
+            if (translationHistory.length > 10) {
+                translationHistory = translationHistory.slice(0, 10);
+            }
+
+            saveTranslationHistory();
+            renderTranslationHistory();
+        }
+
+        // Render translation history
+        function renderTranslationHistory() {
+            const historyList = document.getElementById('historyList');
+            
+            if (translationHistory.length === 0) {
+                historyList.innerHTML = '<div class="text-gray-500 text-sm text-center py-4">暂无翻译历史</div>';
+                return;
+            }
+
+            historyList.innerHTML = translationHistory.map(item => `
+                <div class="bg-gray-50 rounded-lg p-3 text-sm cursor-pointer hover:bg-gray-100 transition-colors" onclick="showHistoryDetail(${item.id})">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-gray-600 text-xs">${item.timestamp}</span>
+                        <button onclick="event.stopPropagation(); useHistoryItem(${item.id})" class="text-primary hover:text-primary-dark text-xs">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                    <div class="text-gray-700 mb-1">${item.originalText.substring(0, 50)}${item.originalText.length > 50 ? '...' : ''}</div>
+                    <div class="text-gray-900 font-medium">${item.translatedText.substring(0, 50)}${item.translatedText.length > 50 ? '...' : ''}</div>
+                    <div class="text-xs text-blue-500 mt-1">
+                        <i class="fas fa-eye mr-1"></i>点击查看全文
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Use history item
+        function useHistoryItem(id) {
+            const item = translationHistory.find(h => h.id === id);
+            if (item) {
+                document.getElementById('textInput').value = item.originalText;
+                document.getElementById('translationResult').value = item.translatedText;
+                document.getElementById('charCount').textContent = item.originalText.length;
+                
+                // 使用历史记录时，如果当前有图片，标记为已处理状态，避免自动OCR
+                if (currentImage || currentImageFile) {
+                    imageOcrProcessed = true;
+                }
+                
+                showToast('历史记录已应用', 'info');
+            }
+        }
+
+        // API Key Management Functions
+        function openApiKeyModal() {
+            const modal = document.getElementById('apiKeyModal');
+            const openaiApiKeyInput = document.getElementById('openaiApiKey');
+            
+            // Load existing API key
+            openaiApiKeyInput.value = TRANSLATION_CONFIG.openai.apiKey;
+            
+            modal.classList.remove('hidden');
+            
+            // Focus on input
+            setTimeout(() => {
+                openaiApiKeyInput.focus();
+            }, 100);
+        }
+
+        function closeApiKeyModal() {
+            const modal = document.getElementById('apiKeyModal');
+            modal.classList.add('hidden');
+        }
+
+        function saveApiKey() {
+            const openaiApiKeyInput = document.getElementById('openaiApiKey');
+            const openaiApiKey = openaiApiKeyInput.value.trim();
+            
+            let errorMessages = [];
+            
+            // 验证和保存OpenAI API密钥
+            if (openaiApiKey) {
+                if (!openaiApiKey.startsWith('sk-')) {
+                    errorMessages.push('OpenAI API密钥应该以"sk-"开头');
+                } else {
+                    localStorage.setItem('openai_api_key', openaiApiKey);
+                    TRANSLATION_CONFIG.openai.apiKey = openaiApiKey;
+                }
+            }
+            
+            if (errorMessages.length > 0) {
+                showToast('❌ ' + errorMessages.join('\n'), 'error');
+                return;
+            }
+            
+            if (!openaiApiKey) {
+                showToast('请输入OpenAI API密钥', 'warning');
+                return;
+            }
+            
+            closeApiKeyModal();
+            showToast('✅ API密钥已保存', 'success');
+            
+            // Update UI status
+            updateAIServiceStatus();
+        }
+
+
+
+        function handleTranslationServiceChange() {
+            const selectedService = document.getElementById('translationService').value;
+            
+            if (selectedService === 'chatgpt') {
+                if (!TRANSLATION_CONFIG.openai.apiKey) {
+                    showToast('ChatGPT翻译需要API密钥，请先设置', 'warning');
+                    openApiKeyModal();
+                    return;
+                }
+                showToast('已切换到ChatGPT翻译引擎', 'info');
+            }
+            
+            updateAIServiceStatus();
+        }
+
+        function updateAIServiceStatus() {
+            const selectedService = document.getElementById('translationService').value;
+            const apiKeyBtn = document.getElementById('apiKeyBtn');
+            
+            if (selectedService === 'chatgpt') {
+                if (TRANSLATION_CONFIG.openai.apiKey) {
+                    apiKeyBtn.classList.add('text-success');
+                    apiKeyBtn.classList.remove('text-gray-500', 'text-error');
+                } else {
+                    apiKeyBtn.classList.add('text-error');
+                    apiKeyBtn.classList.remove('text-gray-500', 'text-success');
+                }
+            } else {
+                apiKeyBtn.classList.remove('text-success', 'text-error');
+                apiKeyBtn.classList.add('text-gray-500');
+            }
+        }
+
+        // Initialize AI service status on load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAIServiceStatus();
+            
+            // Add click outside modal to close
+            document.getElementById('apiKeyModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeApiKeyModal();
+                }
+            });
+            
+
+            
+            // ChatGPT重置配置功能
+            document.getElementById('resetChatGPTConfig').addEventListener('click', resetChatGPTConfig);
+            
+            // History detail modal events
+            document.getElementById('closeHistoryDetailModal').addEventListener('click', closeHistoryDetailModal);
+            document.getElementById('historyDetailModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeHistoryDetailModal();
+                }
+            });
+            
+            // History detail action buttons
+            document.getElementById('useCurrentHistory').addEventListener('click', useCurrentHistoryDetail);
+            document.getElementById('copyHistoryOriginal').addEventListener('click', copyHistoryOriginal);
+            document.getElementById('copyHistoryTranslation').addEventListener('click', copyHistoryTranslation);
+        });
+
+        // Clear history
+        function clearHistory() {
+            translationHistory = [];
+            saveTranslationHistory();
+            renderTranslationHistory();
+            showToast('历史记录已清空', 'info');
+        }
+
+        // Show history detail modal
+        let currentHistoryDetail = null;
+        
+        function showHistoryDetail(id) {
+            const item = translationHistory.find(h => h.id === id);
+            if (!item) return;
+            
+            currentHistoryDetail = item;
+            
+            // 语言名称映射
+            const languageNames = {
+                'auto': '自动检测',
+                'zh-CN': '中文',
+                'en': '英语',
+                'ja': '日语',
+                'ko': '韩语',
+                'es': '西班牙语',
+                'fr': '法语',
+                'de': '德语',
+                'ru': '俄语'
+            };
+            
+            // 填充模态框内容
+            document.getElementById('historyDetailTime').textContent = item.timestamp;
+            document.getElementById('historyDetailSourceLang').textContent = languageNames[item.sourceLanguage] || item.sourceLanguage;
+            document.getElementById('historyDetailTargetLang').textContent = languageNames[item.targetLanguage] || item.targetLanguage;
+            document.getElementById('historyDetailOriginal').textContent = item.originalText;
+            document.getElementById('historyDetailTranslation').textContent = item.translatedText;
+            
+            // 显示模态框
+            document.getElementById('historyDetailModal').classList.remove('hidden');
+            
+            // 防止页面滚动
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeHistoryDetailModal() {
+            document.getElementById('historyDetailModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            currentHistoryDetail = null;
+        }
+        
+        function useCurrentHistoryDetail() {
+            if (currentHistoryDetail) {
+                document.getElementById('textInput').value = currentHistoryDetail.originalText;
+                document.getElementById('translationResult').value = currentHistoryDetail.translatedText;
+                document.getElementById('charCount').textContent = currentHistoryDetail.originalText.length;
+                
+                // 设置语言选择
+                document.getElementById('sourceLanguage').value = currentHistoryDetail.sourceLanguage;
+                document.getElementById('targetLanguage').value = currentHistoryDetail.targetLanguage;
+                
+                // 使用历史记录时，如果当前有图片，标记为已处理状态，避免自动OCR
+                if (currentImage || currentImageFile) {
+                    imageOcrProcessed = true;
+                }
+                
+                closeHistoryDetailModal();
+                showToast('历史记录已应用到主界面', 'success');
+            }
+        }
+        
+        function copyHistoryOriginal() {
+            if (currentHistoryDetail) {
+                copyTextToClipboard(currentHistoryDetail.originalText);
+                showToast('原文已复制到剪贴板', 'success');
+            }
+        }
+        
+        function copyHistoryTranslation() {
+            if (currentHistoryDetail) {
+                copyTextToClipboard(currentHistoryDetail.translatedText);
+                showToast('译文已复制到剪贴板', 'success');
+            }
+        }
+        
+        // Helper function to copy text to clipboard
+        function copyTextToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text);
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                textArea.remove();
+            }
+        }
+
+        // Save translation history to localStorage
+        function saveTranslationHistory() {
+            localStorage.setItem('translationHistory', JSON.stringify(translationHistory));
+        }
+
+        // Load translation history from localStorage
+        function loadTranslationHistory() {
+            const saved = localStorage.getItem('translationHistory');
+            if (saved) {
+                translationHistory = JSON.parse(saved);
+                renderTranslationHistory();
+            }
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const typeClasses = {
+                'success': 'bg-success text-white',
+                'error': 'bg-error text-white',
+                'warning': 'bg-warning text-white',
+                'info': 'bg-blue-500 text-white'
+            };
+
+            const typeIcons = {
+                'success': 'fas fa-check-circle',
+                'error': 'fas fa-exclamation-circle',
+                'warning': 'fas fa-exclamation-triangle',
+                'info': 'fas fa-info-circle'
+            };
+
+            // 处理多行消息
+            const formattedMessage = message.replace(/\n/g, '<br>');
+            
+            toast.className = `${typeClasses[type]} px-4 py-3 rounded-lg shadow-lg max-w-md transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `
+                <div class="flex items-start space-x-2">
+                    <i class="${typeIcons[type]} flex-shrink-0 mt-0.5"></i>
+                    <div class="flex-1">
+                        <div class="text-sm leading-relaxed">${formattedMessage}</div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 text-white hover:text-gray-200 ml-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            toastContainer.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+
+            // Auto remove after longer time for detailed messages
+            const autoRemoveTime = message.includes('\n') ? 8000 : 3000;
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.parentElement.removeChild(toast);
+                    }
+                }, 300);
+            }, autoRemoveTime);
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter for translation
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                translateText();
+            }
+        });
+
+        // Show keyboard shortcuts on load
+        setTimeout(() => {
+            showToast('🎉 翻译功能已修复！现在支持真实的多语言翻译', 'success');
+        }, 1000);
+        
+        setTimeout(() => {
+            showToast('✨ OCR功能已升级！支持多语言高精度识别，增强稳定性和错误处理', 'success');
+        }, 2500);
+        
+        setTimeout(() => {
+            showToast('🚀 新功能：上传图片后直接点击翻译按钮即可自动OCR+翻译', 'success');
+        }, 4000);
+        
+        setTimeout(() => {
+            showToast('🔧 Bug修复：现在可以连续上传多张图片进行翻译，无需手动清空之前的结果', 'success');
+        }, 5500);
+        
+        setTimeout(() => {
+            showToast('🧠 新增ChatGPT翻译引擎！点击钥匙图标设置API密钥', 'success');
+        }, 7000);
+        
+
+        
+        setTimeout(() => {
+            showToast('快捷键：Ctrl+Enter 开始翻译', 'info');
+        }, 13000);
+        
+
+
+
+
+        // ChatGPT重置配置功能
+        function resetChatGPTConfig() {
+            if (confirm('确定要重置ChatGPT配置吗？这将清除已保存的API密钥和相关设置。')) {
+                // 清除API密钥
+                localStorage.removeItem('openai_api_key');
+                TRANSLATION_CONFIG.openai.apiKey = '';
+                
+                // 清除输入框
+                document.getElementById('openaiApiKey').value = '';
+                
+                // 重置翻译服务选择
+                const serviceSelect = document.getElementById('translationService');
+                if (serviceSelect.value === 'chatgpt') {
+                    serviceSelect.value = 'google';
+                }
+                
+                // 更新UI状态
+                updateAIServiceStatus();
+                
+                showToast('✅ ChatGPT配置已重置\n建议：\n1. 重新输入API密钥\n2. 保存配置后开始使用', 'success');
+            }
+        }
+
+
+    </script>
+</body>
+</html> 
